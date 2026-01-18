@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simple Dreddark API v2
 // @namespace    http://tampermonkey.net/
-// @version      2.1.1
+// @version      2.1.3
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
 // @match        https://drednot.io/*
@@ -11,127 +11,277 @@
 // ==/UserScript==
 
 /*
-README - Simple Dreddark API v2
+# Simple Dreddark API v2
 
-Overview
---------
-This script exposes a small, client-side developer API for drednot.io.
-It does NOT add gameplay features by itself.
+## Overview
+Simple Dreddark API is a **client-side developer API** for **drednot.io**.
+It provides structured access to **chat parsing, ship events, command handling, storage, and utilities**.
+**Important**: All data is inferred from the DOM and UI behavior. Nothing is server-trusted.
 
-All events are inferred from DOM/chat parsing and are NOT server-trusted.
+---
 
-You must explicitly initialize the API.
+## Initialization & Lifecycle
 
-Initialization
---------------
+The API is **opt-in**. Nothing runs automatically.
+```js
 Dreddark.init();
+```
 
 Optional cleanup:
+```js
 Dreddark.destroy();
+```
 
-Global
-------
+Destroy disconnects observers and stops all parsing.
+
+---
+
+## Global Access
+
+```js
 window.Dreddark
+```
 
-API Surface
------------
-Dreddark.version        -> API version string
-Dreddark.init()         -> Start observers and event parsing
-Dreddark.destroy()      -> Stop observers
-Dreddark.events         -> Event
-Dreddark.chat           -> Chat helpers
-Dreddark.ship           -> Ship / role helpers
-Dreddark.commands       -> Command router
-Dreddark.utils          -> Utility functions
-Dreddark.use(fn)        -> Plugin hook
+---
 
-Events
-------
-Register listeners:
+## API Surface
 
+```js
+Dreddark.version              // API version string
+Dreddark.init()               // Start all observers
+Dreddark.destroy()            // Stop all observers
+
+Dreddark.outfit               // In-game outfits
+Dreddark.events               // Event bus
+Dreddark.chat                 // Chat send + observers
+Dreddark.commands             // Command router
+Dreddark.ship                 // Ship / role helpers
+Dreddark.utils                // Utility helpers
+Dreddark.storage              // Session & persistent storage
+Dreddark.debug                // Debug logging control
+Dreddark.use(fn)              // Plugin hook
+```
+
+---
+
+## Events
+
+### Registering Listeners
+
+```js
 Dreddark.events.on("chat", handler);
+```
 
-Supported event types:
-- "chat"
-- "shipJoin"
-- "shipLeave"
-- "roleChange"
-- "mission"
-- "warning"
+### Supported Event Types
 
-Chat Event Payload Example:
+| Event        | Description          |
+| ------------ | -------------------- |
+| `chat`       | Player chat message  |
+| `shipJoin`   | Player joined ship   |
+| `shipLeave`  | Player left ship     |
+| `roleChange` | Promotion / demotion |
+| `mission`    | Mission announcement |
+| `warning`    | System warning       |
+
+### Base Event Fields
+
+Every event contains:
+
+```js
+{
+  raw: "Original chat line",
+  timestamp: Number,
+  trusted: false,
+  isUser: Boolean,
+  isSystem: Boolean
+}
+```
+
+### Chat Event Payload
+
+```js
 {
   user: "Player",
   role: "Crew",
   message: "hello",
-  trusted: false,
-  timestamp: 1710000000000,
-  raw: "Crew Player: hello"
+  badges: [{ img, text }],
+  isUser: true,
+  isSystem: false
 }
+```
 
-Example:
-Dreddark.events.on("chat", e => {
-  if (e.message === "hi")
-    Dreddark.chat.send("hello");
-});
+---
 
-Commands
---------
-Register chat commands:
+## Chat API
 
-Dreddark.commands.register("?ping", {
+### Sending Messages
+
+```js
+Dreddark.chat.send("Hello world");
+```
+
+Features:
+
+* Message queue
+* Rate limiting
+* Automatic truncation (>250 chars)
+
+### Chat Lifecycle
+
+Chat observation is controlled by:
+
+```js
+await Dreddark.chat.init();
+Dreddark.chat.destroy();
+```
+
+---
+
+## Command System
+
+Commands are **client-side only** and parsed from chat messages.
+
+### Registering Commands
+
+```js
+Dreddark.commands.register("ping", {
+  prefix: "?",
+  rankRequire: 1,
+  sessionCooldown: 5000,
+  persistCooldown: 60000,
+  globalCooldown: 1000,
+
   run(e, args) {
     Dreddark.chat.send("pong");
   }
 });
+```
 
-Chat
-----
-Send chat messages:
+### Command Options
 
-Dreddark.chat.send("Hello world");
+| Option            | Description                                 |
+| ----------------- | ------------------------------------------- |
+| `prefix`          | Command prefix (per-command)                |
+| `rankRequire`     | Minimum role rank                           |
+| `sessionCooldown` | Cooldown per user per session               |
+| `persistCooldown` | Cooldown per user persisted in localStorage |
+| `globalCooldown`  | Global cooldown shared by all users         |
 
+---
 
-Ship / Roles
-------------
+## Storage
+
+Structured storage is provided under `Dreddark.storage`.
+
+### Session Storage
+
+```js
+Dreddark.storage.session
+```
+
+* In-memory only
+* Cleared on reload
+
+### Persistent Storage
+
+```js
+Dreddark.storage.persist
+```
+
+* Backed by `localStorage`
+* Namespaced under `DreddarkAPI.persist`
+* Used for cooldowns and long-lived data
+
+---
+
+## Ship / Role Helpers
+
 Promote or demote users via UI interaction:
 
+```js
 Dreddark.ship.promote("username", 1);
+```
 
-Example:
-Dreddark.commands.register("?crew", {
-  run(e, args) {
-    Dreddark.ship.promote(e.user, 1);
-  }
-});
+Rank values:
 
+* `0` — Guest
+* `1` — Crew
+* `3` — Captain
 
-Utils
------
-Validate player names:
+---
+
+## Outfit API
+
+Provides controlled outfit updates via WebSocket interception.
+
+### Initialization (MANDATORY)
+
+Must run at **document-start**:
+
+```js
+Dreddark.outfit.initWsHook("sdt-sendToWs");
+```
+
+* Loads `msgpack` automatically if missing
+* No-ops if executed late
+
+### Applying Outfit
+
+```js
+Dreddark.outfit.setOutfit(true);  // in-game
+Dreddark.outfit.setOutfit(false); // menu / storage
+```
+
+Safety:
+
+* Hard-blocked if WS hook failed
+* Hard-blocked if msgpack missing
+
+---
+
+## Utils
+
+### Validate Player Names
+
+```js
 const err = Dreddark.utils.validateName("My Name");
 if (err) Dreddark.chat.send(err);
+```
 
+---
 
-Plugins
--------
+## Debugging
+
+Debug logging is centralized:
+
+```js
+Dreddark.debug.enabled = true;
+```
+
+All internal parsing and event emission logs route through this flag.
+
+---
+
+## Plugins
 Extend the API without forking:
-
+```js
 Dreddark.use(api => {
   api.events.on("mission", e => {
     api.chat.send("New mission detected");
   });
 });
+```
+
+Plugins receive the live API instance and may:
+* Register events
+* Register commands
+* Use storage
 */
 
 const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-
+const version = "2.1.3";
 (() => {
   "use strict";
-
-  const version = "2.0.0";
-  let started = false;
-  let chatObserver = null;
   let defaultCommandPrefix = "?";
   const debug = {
     enabled: true,
@@ -219,36 +369,6 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
       });
     },
   };
-
-  const chat = (() => {
-    const queue = [];
-    let busy = false;
-    const limit = 1000;
-    const sendNext = () => {
-      if (busy || !queue.length) return;
-      const input = document.getElementById("chat-input");
-      const btn = document.getElementById("chat-send");
-      if (!input || !btn) return;
-      busy = true;
-      let msg = queue.shift();
-      if (msg.length > 250) msg = msg.slice(0, 247) + "...";
-      input.value = msg;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      btn.click();
-      setTimeout(() => {
-        busy = false;
-        sendNext();
-      }, limit);
-    };
-    return {
-      send(msg) {
-        if (!msg) return false;
-        queue.push(String(msg));
-        sendNext();
-        return true;
-      },
-    };
-  })();
 
   const ship = {
     promote(user, rank) {
@@ -369,139 +489,240 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
       },
     };
   })();
-
-  const createChatObserver = (target) =>
-    new MutationObserver((muts) => {
-      for (const m of muts) {
-        const nodes = [];
-        if (m.target instanceof HTMLElement) nodes.push(m.target);
-        for (const n of m.addedNodes)
-          if (n instanceof HTMLElement) nodes.push(n);
-        for (const n of nodes) {
-          const b = n.querySelector?.("b");
-          if (!b) {
-            debug.log("skip: no <b>", n);
-            continue;
-          }
-          const badgeEls = b.querySelectorAll(".user-badge-small");
-          const spans = b.querySelectorAll("span");
-          const bdis = b.querySelectorAll("bdi");
-          const text = b.textContent.trim();
-          const isWarning =
-            b.classList.contains("warning") || text.startsWith("WARNING:");
-          const hasColon = text.includes(":");
-          const hasUser = !!b.querySelector("bdi");
-          const isUser = !isWarning && hasColon && hasUser;
-          const isSystem = !isUser;
-          const base = {
-            trusted: false,
-            timestamp: Date.now(),
-            raw: text,
-            isUser,
-            isSystem,
-          };
-          debug.log("parsed", { text, isUser, isSystem });
-          if (b.classList.contains("warning")) {
-            debug.log("emit warning", base);
-            events.emit("warning", base);
-            continue;
-          }
-          if (
-            isSystem &&
-            spans[0]?.textContent === "SYSTEM" &&
-            text.includes("New mission:")
-          ) {
-            const isOpen = text.includes("NOW");
-            const name =
-              text.split("New mission:")[1]?.split(".")[0]?.trim() || "";
-            const location = text.match(/in (.*?) (NOW|in)/)?.[1] || "";
-            debug.log("emit mission", { name, location, isOpen });
-            events.emit("mission", { ...base, name, location, isOpen });
-            continue;
-          }
-          if (
-            isSystem &&
-            (text.includes("was promoted to") ||
-              text.includes("was demoted to"))
-          ) {
-            if (bdis.length >= 2 && spans.length >= 2) {
-              debug.log("emit roleChange", {
-                targetUser: bdis[0].textContent,
-                byUser: bdis[1].textContent,
-              });
-              events.emit("roleChange", {
-                ...base,
-                targetUser: bdis[0].textContent,
-                byUser: bdis[1].textContent,
-                newRole: spans[0].textContent,
-                oldRole: spans[1].textContent,
-              });
-            }
-            continue;
-          }
-          if (isUser) {
-            const user = bdis[0]?.textContent || "unknown";
-            const role = spans[0]?.textContent || "Guest";
-            const badges = badgeEls.length
-              ? [...badgeEls].map((b) => ({
-                  img: b.querySelector("img")?.getAttribute("src") || null,
-                  text: b.querySelector(".tooltip")?.textContent.trim() || null,
-                }))
-              : [];
-            const message = text
-              .split(":")
-              .slice(1)
-              .join(":")
-              .trim()
-              .toLowerCase();
-            if (!message) {
-              debug.log("skip empty message", text);
+  const chat = (() => {
+    const queue = [];
+    let busy = false;
+    const limit = 1000;
+    let chatObserver = null;
+    let started = false;
+    const sendNext = () => {
+      if (busy || !queue.length) return;
+      const input = document.getElementById("chat-input");
+      const btn = document.getElementById("chat-send");
+      if (!input || !btn) return;
+      busy = true;
+      let msg = queue.shift();
+      if (msg.length > 250) msg = msg.slice(0, 247) + "...";
+      input.value = msg;
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      btn.click();
+      setTimeout(() => {
+        busy = false;
+        sendNext();
+      }, limit);
+    };
+    const init = async () => {
+      if (started) return false;
+      started = true;
+      const target = await observe.wait("#chat-content");
+      chatObserver = new MutationObserver((muts) => {
+        for (const m of muts) {
+          const nodes = [];
+          if (m.target instanceof HTMLElement) nodes.push(m.target);
+          for (const n of m.addedNodes)
+            if (n instanceof HTMLElement) nodes.push(n);
+          for (const n of nodes) {
+            const b = n.querySelector?.("b");
+            if (!b) {
+              debug.log("skip: no <b>", n);
               continue;
             }
-            debug.log("emit chat", { user, role, message });
-            events.emit("chat", { ...base, user, role, message, badges });
-            continue;
+            const badgeEls = b.querySelectorAll(".user-badge-small");
+            const spans = b.querySelectorAll("span");
+            const bdis = b.querySelectorAll("bdi");
+            const text = b.textContent.trim();
+            const isWarning =
+              b.classList.contains("warning") || text.startsWith("WARNING:");
+            const hasColon = text.includes(":");
+            const hasUser = !!b.querySelector("bdi");
+            const isUser = !isWarning && hasColon && hasUser;
+            const isSystem = !isUser;
+            const base = {
+              trusted: false,
+              timestamp: Date.now(),
+              raw: text,
+              isUser,
+              isSystem,
+            };
+            debug.log("parsed", { text, isUser, isSystem });
+            if (isWarning) {
+              debug.log("emit warning", base);
+              events.emit("warning", base);
+              continue;
+            }
+            if (
+              isSystem &&
+              spans[0]?.textContent === "SYSTEM" &&
+              text.includes("New mission:")
+            ) {
+              const isOpen = text.includes("NOW");
+              const name =
+                text.split("New mission:")[1]?.split(".")[0]?.trim() || "";
+              const location = text.match(/in (.*?) (NOW|in)/)?.[1] || "";
+              debug.log("emit mission", { name, location, isOpen });
+              events.emit("mission", { ...base, name, location, isOpen });
+              continue;
+            }
+            if (
+              isSystem &&
+              (text.includes("was promoted to") ||
+                text.includes("was demoted to"))
+            ) {
+              if (bdis.length >= 2 && spans.length >= 2) {
+                debug.log("emit roleChange", {
+                  targetUser: bdis[0].textContent,
+                  byUser: bdis[1].textContent,
+                });
+                events.emit("roleChange", {
+                  ...base,
+                  targetUser: bdis[0].textContent,
+                  byUser: bdis[1].textContent,
+                  newRole: spans[0].textContent,
+                  oldRole: spans[1].textContent,
+                });
+              }
+              continue;
+            }
+            if (isUser) {
+              const user = bdis[0]?.textContent || "unknown";
+              const role = spans[0]?.textContent || "Guest";
+              const badges = badgeEls.length
+                ? [...badgeEls].map((b) => ({
+                    img: b.querySelector("img")?.getAttribute("src") || null,
+                    text:
+                      b.querySelector(".tooltip")?.textContent.trim() || null,
+                  }))
+                : [];
+              const message = text
+                .split(":")
+                .slice(1)
+                .join(":")
+                .trim()
+                .toLowerCase();
+              if (!message) {
+                debug.log("skip empty message", text);
+                continue;
+              }
+              debug.log("emit chat", { user, role, message });
+              events.emit("chat", { ...base, user, role, message, badges });
+              continue;
+            }
+            if (isSystem && text.includes("joined the ship.")) {
+              const user = bdis[0]?.textContent || "unknown";
+              debug.log("emit shipJoin", user);
+              events.emit("shipJoin", { ...base, user });
+              continue;
+            }
+            if (isSystem && text.includes("left the ship.")) {
+              const user = bdis[0]?.textContent || "unknown";
+              debug.log("emit shipLeave", user);
+              events.emit("shipLeave", { ...base, user });
+              continue;
+            }
+            debug.log("unhandled line", text);
           }
-          if (isSystem && text.includes("joined the ship.")) {
-            const user = bdis[0]?.textContent || "unknown";
-            debug.log("emit shipJoin", user);
-            events.emit("shipJoin", { ...base, user });
-            continue;
-          }
-          if (isSystem && text.includes("left the ship.")) {
-            const user = bdis[0]?.textContent || "unknown";
-            debug.log("emit shipLeave", user);
-            events.emit("shipLeave", { ...base, user });
-            continue;
-          }
-          debug.log("unhandled line", text);
         }
+      });
+      chatObserver.observe(target, { childList: true, subtree: true });
+      return true;
+    };
+    const destroy = () => {
+      if (!started) return false;
+      chatObserver?.disconnect();
+      chatObserver = null;
+      started = false;
+      return true;
+    };
+    return {
+      send(msg) {
+        if (!msg) return false;
+        queue.push(String(msg));
+        sendNext();
+        return true;
+      },
+      init,
+      destroy,
+    };
+  })();
+
+  const outfit = (() => {
+    let wsReady = false;
+    let wsSend = null;
+    let wsMessageKey = null;
+    let msgpackReady = false;
+    let msgpackLoading = false;
+    const isDocumentStart = () => document.readyState === "loading";
+    const loadMsgpack = () => {
+      if (window.msgpack) {
+        msgpackReady = true;
+        return;
       }
-    });
-
-  const init = async () => {
-    if (started) return false;
-    started = true;
-    const target = await observe.wait("#chat-content");
-    chatObserver = createChatObserver(target);
-    chatObserver.observe(target, { childList: true, subtree: true });
-    return true;
-  };
-
-  const destroy = () => {
-    if (!started) return false;
-    chatObserver?.disconnect();
-    chatObserver = null;
-    started = false;
-    return true;
-  };
+      if (msgpackLoading) return;
+      msgpackLoading = true;
+      const s = document.createElement("script");
+      s.src =
+        "https://cdn.jsdelivr.net/npm/@msgpack/msgpack/dist/msgpack.min.js";
+      s.onload = () => {
+        msgpackReady = true;
+      };
+      s.onerror = () => {
+        msgpackLoading = false;
+      };
+      document.documentElement.appendChild(s);
+    };
+    const initWsHook = (messageKey) => {
+      if (!isDocumentStart()) return;
+      if (wsReady) return;
+      if (typeof messageKey !== "string" || !messageKey) return;
+      wsMessageKey = messageKey;
+      loadMsgpack();
+      const origPostMessage = window.postMessage;
+      window.postMessage = function (data, origin, ...rest) {
+        if (!wsReady && data?.message === wsMessageKey && data?.wsData) {
+          wsSend = (d) =>
+            origPostMessage.call(
+              this,
+              { message: wsMessageKey, wsData: d },
+              origin,
+            );
+          wsReady = true;
+        }
+        return origPostMessage.call(this, data, origin, ...rest);
+      };
+    };
+    const getSettings = () => {
+      try {
+        return JSON.parse(localStorage.getItem("dredark_user_settings")) || {};
+      } catch {
+        return {};
+      }
+    };
+    const setOutfit = (isInGame) => {
+      if (isInGame) {
+        if (!wsReady || !msgpackReady) return;
+        wsSend(
+          window.msgpack.encode({
+            type: 7,
+            outfit: getSettings().player_appearance || {},
+          }),
+        );
+        return;
+      }
+      const settings = getSettings();
+      settings.player_appearance ||= {};
+      localStorage.setItem("dredark_user_settings", JSON.stringify(settings));
+    };
+    return {
+      initWsHook,
+      setOutfit,
+    };
+  })();
 
   const Dreddark = {
     version,
-    init,
-    destroy,
     rankValue,
     debug,
+    outfit,
     events,
     chat,
     ship,

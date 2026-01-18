@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simple Dreddark API v2
 // @namespace    http://tampermonkey.net/
-// @version      2.0.0
+// @version      2.0.1
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
 // @match        https://drednot.io/*
@@ -302,16 +302,6 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
           continue;
         }
 
-        if (text.endsWith("joined the ship.")) {
-          events.emit("shipJoin", base);
-          continue;
-        }
-
-        if (text.endsWith("left the ship.")) {
-          events.emit("shipLeave", base);
-          continue;
-        }
-
         if (text.includes(":")) {
           const user = bdis[0]?.textContent || "unknown";
           const role = spans[0]?.textContent || "Guest";
@@ -322,6 +312,16 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
           const msg = text.split(":").slice(1).join(":").trim().toLowerCase();
           if (!msg) continue;
           events.emit("chat", { ...base, user, role, message: msg, badges });
+        }
+        else {
+            if (text.endsWith("joined the ship.")) {
+            events.emit("shipJoin", base);
+            continue;
+          }
+          if (text.endsWith("left the ship.")) {
+            events.emit("shipLeave", base);
+            continue;
+          }
         }
       }
     });

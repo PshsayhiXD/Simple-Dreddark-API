@@ -1,16 +1,17 @@
 // ==UserScript==
 // @name         Simple Dreddark API v2
 // @namespace    http://tampermonkey.net/
-// @version      2.0.1
+// @version      2.1.1
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
 // @match        https://drednot.io/*
 // @match        https://test.drednot.io/*
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=drednot.io
 // @grant        unsafeWindow
 // ==/UserScript==
 
 /*
-README — Simple Dreddark API v2
+README - Simple Dreddark API v2
 
 Overview
 --------
@@ -131,12 +132,52 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
   const version = "2.0.0";
   let started = false;
   let chatObserver = null;
-
+  let defaultCommandPrefix = "?";
+  const debug = {
+    enabled: true,
+    log(...args) {
+      if (!this.enabled) return;
+      console.log("[Dreddark]", ...args);
+    },
+  };
   const rankValue = {
     0: "guest",
     1: "crew",
-    3: "captain"
+    3: "captain",
   };
+  const storage = {
+    session: new Map(),
+    persist: {
+      key: "DreddarkAPI.persist",
+      read() {
+        try {
+          return JSON.parse(localStorage.getItem(this.key)) || {};
+        } catch {
+          return {};
+        }
+      },
+      write(v) {
+        try {
+          localStorage.setItem(this.key, JSON.stringify(v));
+        } catch {}
+      },
+      get(ns, k) {
+        return this.read()?.[ns]?.[k];
+      },
+      set(ns, k, v) {
+        const d = this.read();
+        d[ns] ||= {};
+        d[ns][k] = v;
+        this.write(d);
+      },
+      del(ns, k) {
+        const d = this.read();
+        if (d?.[ns]) delete d[ns][k];
+        this.write(d);
+      },
+    },
+  };
+
   const createEventBus = () => {
     const map = {};
     return {
@@ -144,10 +185,12 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
         (map[type] ||= []).push(fn);
       },
       emit(type, payload) {
-        (map[type] || []).forEach(fn => {
-          try { fn(payload); } catch {}
+        (map[type] || []).forEach((fn) => {
+          try {
+            fn(payload);
+          } catch {}
         });
-      }
+      },
     };
   };
 
@@ -174,7 +217,7 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
         }, timeout);
         obs.observe(document, { childList: true, subtree: true });
       });
-    }
+    },
   };
 
   const chat = (() => {
@@ -203,9 +246,10 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
         queue.push(String(msg));
         sendNext();
         return true;
-      }
+      },
     };
   })();
+
   const ship = {
     promote(user, rank) {
       if (!(rank in rankValue)) return false;
@@ -215,8 +259,10 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
       btn.click();
       menu.classList.add("hidden");
       observe.wait("#team_players_inner").then(() => {
-        const codes = document.querySelectorAll("#team_players_inner td > code");
-        const code = [...codes].find(e => e.textContent === user);
+        const codes = document.querySelectorAll(
+          "#team_players_inner td > code",
+        );
+        const code = [...codes].find((e) => e.textContent === user);
         const select = code?.closest("tr")?.querySelector("select");
         if (!select) return;
         select.value = rank;
@@ -227,7 +273,7 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
         }, 250);
       });
       return true;
-    }
+    },
   };
 
   const utils = {
@@ -240,88 +286,195 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
       const m = name.match(/[^a-z0-9 ]/gi);
       if (m) return `Invalid character: '${m[0]}'`;
       return null;
-    }
+    },
   };
 
   const commands = (() => {
     const map = {};
-    events.on("chat", e => {
-      if (!e.message.startsWith("?")) return;
-      const [cmd, ...args] = e.message.split(/\s+/);
-      const h = map[cmd];
-      if (!h) return;
-      h.run(e, args);
+    const cdNs = "persistCooldown";
+    const now = () => Date.now();
+    const error = (m) => Dreddark.chat.send(`error: ${m}`);
+    events.on("chat", (e) => {
+      for (const name in map) {
+        const c = map[name];
+        const prefix = c.prefix || defaultCommandPrefix;
+        if (!e.message.startsWith(prefix)) continue;
+        const body = e.message.slice(prefix.length).trim();
+        if (!body) continue;
+        const parts = body.split(/\s+/);
+        if (parts[0] !== name) continue;
+        const args = parts.slice(1);
+        if (c.rankRequire != null) {
+          if ((rankValue[e.role] ?? 0) < c.rankRequire) {
+            error("insufficient rank");
+            return;
+          }
+        }
+        const userKey = `cmd:${name}:user:${e.user}`;
+        const globalKey = `cmd:${name}:global`;
+        if (c.sessionCooldown) {
+          const until = storage.session.get(cdNs, userKey) || 0;
+          if (until > now()) {
+            error(`cooldown ${((until - now()) / 1000) | 0}s`);
+            return;
+          }
+        }
+        if (c.persistCooldown) {
+          const until = storage.persist.get(cdNs, userKey);
+          if (until > now()) {
+            error(`cooldown ${((until - now()) / 1000) | 0}s`);
+            return;
+          }
+        }
+        if (c.globalCooldown) {
+          const until = storage.persist.get(cdNs, globalKey);
+          if (until > now()) {
+            error(`global cooldown ${((until - now()) / 1000) | 0}s`);
+            return;
+          }
+        }
+        if (c.args) {
+          for (let i = 0; i < c.args.length; i++) {
+            const s = c.args[i];
+            const v = args[i];
+            if (s.required && v == null) {
+              error(`missing <${s.name}>`);
+              return;
+            }
+            if (v != null && s.validate) {
+              const err = s.validate(v, args);
+              if (err) {
+                error(err);
+                return;
+              }
+            }
+          }
+        }
+        c.run(e, args);
+        if (c.sessionCooldown)
+          storage.session.set(cdNs, userKey, now() + c.sessionCooldown);
+        if (c.persistCooldown)
+          storage.persist.set(cdNs, userKey, now() + c.persistCooldown);
+        if (c.globalCooldown)
+          storage.persist.set(cdNs, globalKey, now() + c.globalCooldown);
+        return;
+      }
     });
     return {
-      register(cmd, handler) {
-        map[cmd] = handler;
-      }
+      register(name, handler) {
+        map[name] = handler;
+      },
+      setDefaultPrefix(p) {
+        if (typeof p === "string" && p.length) defaultCommandPrefix = p;
+      },
     };
   })();
 
-  const createChatObserver = target =>
-    new MutationObserver(muts => {
-      for (const m of muts) for (const n of m.addedNodes) {
-        if (!(n instanceof HTMLElement)) continue;
-        const b = n.querySelector("b");
-        if (!b) continue;
-        const badgeEls = b.querySelectorAll(".user-badge-small");
-        const text = b.textContent.trim();
-        const spans = b.querySelectorAll("span");
-        const bdis = b.querySelectorAll("bdi");
-
-        const base = {
-          trusted: false,
-          timestamp: Date.now(),
-          raw: text
-        };
-
-        if (b.classList.contains("warning")) {
-          events.emit("warning", base);
-          continue;
-        }
-
-        if (spans[0]?.textContent === "SYSTEM" && text.includes("New mission:")) {
-          const isOpen = text.includes("NOW");
-          const name = text.split("New mission:")[1]?.split(".")[0]?.trim() || "";
-          const location = text.match(/in (.*?) (NOW|in)/)?.[1] || "";
-          events.emit("mission", { ...base, name, location, isOpen });
-          continue;
-        }
-
-        if (text.includes("was promoted to") || text.includes("was demoted to")) {
-          if (bdis.length >= 2 && spans.length >= 2) {
-            events.emit("roleChange", {
-              ...base,
-              targetUser: bdis[0].textContent,
-              byUser: bdis[1].textContent,
-              newRole: spans[0].textContent,
-              oldRole: spans[1].textContent
-            });
-          }
-          continue;
-        }
-
-        if (text.includes(":")) {
-          const user = bdis[0]?.textContent || "unknown";
-          const role = spans[0]?.textContent || "Guest";
-          const badges = badgeEls.length ? [...badgeEls].map(b => ({
-            img: b.querySelector("img")?.getAttribute("src") || null,
-            text: b.querySelector(".tooltip")?.textContent.trim() || null
-          })) : [];
-          const msg = text.split(":").slice(1).join(":").trim().toLowerCase();
-          if (!msg) continue;
-          events.emit("chat", { ...base, user, role, message: msg, badges });
-        }
-        else {
-            if (text.endsWith("joined the ship.")) {
-            events.emit("shipJoin", base);
+  const createChatObserver = (target) =>
+    new MutationObserver((muts) => {
+      for (const m of muts) {
+        const nodes = [];
+        if (m.target instanceof HTMLElement) nodes.push(m.target);
+        for (const n of m.addedNodes)
+          if (n instanceof HTMLElement) nodes.push(n);
+        for (const n of nodes) {
+          const b = n.querySelector?.("b");
+          if (!b) {
+            debug.log("skip: no <b>", n);
             continue;
           }
-          if (text.endsWith("left the ship.")) {
-            events.emit("shipLeave", base);
+          const badgeEls = b.querySelectorAll(".user-badge-small");
+          const spans = b.querySelectorAll("span");
+          const bdis = b.querySelectorAll("bdi");
+          const text = b.textContent.trim();
+          const isWarning =
+            b.classList.contains("warning") || text.startsWith("WARNING:");
+          const hasColon = text.includes(":");
+          const hasUser = !!b.querySelector("bdi");
+          const isUser = !isWarning && hasColon && hasUser;
+          const isSystem = !isUser;
+          const base = {
+            trusted: false,
+            timestamp: Date.now(),
+            raw: text,
+            isUser,
+            isSystem,
+          };
+          debug.log("parsed", { text, isUser, isSystem });
+          if (b.classList.contains("warning")) {
+            debug.log("emit warning", base);
+            events.emit("warning", base);
             continue;
           }
+          if (
+            isSystem &&
+            spans[0]?.textContent === "SYSTEM" &&
+            text.includes("New mission:")
+          ) {
+            const isOpen = text.includes("NOW");
+            const name =
+              text.split("New mission:")[1]?.split(".")[0]?.trim() || "";
+            const location = text.match(/in (.*?) (NOW|in)/)?.[1] || "";
+            debug.log("emit mission", { name, location, isOpen });
+            events.emit("mission", { ...base, name, location, isOpen });
+            continue;
+          }
+          if (
+            isSystem &&
+            (text.includes("was promoted to") ||
+              text.includes("was demoted to"))
+          ) {
+            if (bdis.length >= 2 && spans.length >= 2) {
+              debug.log("emit roleChange", {
+                targetUser: bdis[0].textContent,
+                byUser: bdis[1].textContent,
+              });
+              events.emit("roleChange", {
+                ...base,
+                targetUser: bdis[0].textContent,
+                byUser: bdis[1].textContent,
+                newRole: spans[0].textContent,
+                oldRole: spans[1].textContent,
+              });
+            }
+            continue;
+          }
+          if (isUser) {
+            const user = bdis[0]?.textContent || "unknown";
+            const role = spans[0]?.textContent || "Guest";
+            const badges = badgeEls.length
+              ? [...badgeEls].map((b) => ({
+                  img: b.querySelector("img")?.getAttribute("src") || null,
+                  text: b.querySelector(".tooltip")?.textContent.trim() || null,
+                }))
+              : [];
+            const message = text
+              .split(":")
+              .slice(1)
+              .join(":")
+              .trim()
+              .toLowerCase();
+            if (!message) {
+              debug.log("skip empty message", text);
+              continue;
+            }
+            debug.log("emit chat", { user, role, message });
+            events.emit("chat", { ...base, user, role, message, badges });
+            continue;
+          }
+          if (isSystem && text.includes("joined the ship.")) {
+            const user = bdis[0]?.textContent || "unknown";
+            debug.log("emit shipJoin", user);
+            events.emit("shipJoin", { ...base, user });
+            continue;
+          }
+          if (isSystem && text.includes("left the ship.")) {
+            const user = bdis[0]?.textContent || "unknown";
+            debug.log("emit shipLeave", user);
+            events.emit("shipLeave", { ...base, user });
+            continue;
+          }
+          debug.log("unhandled line", text);
         }
       }
     });
@@ -347,15 +500,20 @@ const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
     version,
     init,
     destroy,
+    rankValue,
+    debug,
     events,
     chat,
     ship,
     commands,
     observe,
+    storage,
     utils,
     use(fn) {
-      try { fn(Dreddark); } catch {}
-    }
+      try {
+        fn(Dreddark);
+      } catch {}
+    },
   };
 
   root.Dreddark = Dreddark;

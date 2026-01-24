@@ -191,9 +191,9 @@ Dreddark.ship.promote("username", 1);
 
 Rank values:
 
-* `0` — Guest
-* `1` — Crew
-* `3` — Captain
+* `0` - Guest
+* `1` - Crew
+* `3` - Captain
 
 ---
 
@@ -206,7 +206,7 @@ Provides controlled outfit updates via WebSocket interception.
 Must run at **document-start**:
 
 ```js
-Dreddark.outfit.initWsHook("sdt-sendToWs");
+Dreddark.outfit.initWsHook("dreddarkAPI", outfit_object_goes_here);
 ```
 
 * Loads `msgpack` automatically if missing
@@ -215,14 +215,9 @@ Dreddark.outfit.initWsHook("sdt-sendToWs");
 ### Applying Outfit
 
 ```js
-Dreddark.outfit.setOutfit(true);  // in-game
-Dreddark.outfit.setOutfit(false); // menu / storage
+Dreddark.outfit.setOutfit(true, outfit_object_goes_here);  // in-game
+Dreddark.outfit.setOutfit(false, outfit_object_goes_here); // menu
 ```
-
-Safety:
-
-* Hard-blocked if WS hook failed
-* Hard-blocked if msgpack missing
 
 ---
 

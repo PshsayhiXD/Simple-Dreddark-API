@@ -213,26 +213,27 @@ const version = "2.1.5";
 
   const client = {
     async accountInfo() {
-      let accountInfo;
+      let info;
       await fetch(`https://drednot.io/account/status`)
         .then((res) => res.json())
         .then((json) => {
           if (json.account) {
-            accountInfo = {
+            info = {
               name: json.account.name,
               isRegistered: json.account.is_registered === true,
             };
           } else if (json.account === null)
-            accountInfo = {
-              noAccount: true,
+            info = {
+              ma,e: json.account.name,
+              isRegistered:  false,
             };
         })
         .catch(() => {});
-      return accountInfo;
+      return info;
     },
     async getAccount(key) {
       try {
-        const info = await AccountInfo();
+        const info = await accountInfo();
         if (!info?.[key]) return null;
         return info?.[key];
       } catch (error) {
@@ -240,7 +241,8 @@ const version = "2.1.5";
       }
     },
     async getClientUsername() {
-      return await getAccount("name");
+      const name = await getAccount("name");
+      return name;
     },
     async isClientRegistered() {
       const isRegistered = await getAccount("isRegistered");

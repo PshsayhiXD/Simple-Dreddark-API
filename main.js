@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simple Dreddark API v2
 // @namespace    http://tampermonkey.net/
-// @version      2.1.3
+// @version      2.1.4
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
 // @match        https://drednot.io/*
@@ -11,15 +11,18 @@
 // ==/UserScript==
 
 const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-const version = "2.1.3";
+const version = "2.1.4";
 (() => {
   "use strict";
+  // ====>====>====>====>====> CONFIG <====<====<====<====<====
   let defaultCommandPrefix = "?";
+
+
   const debug = {
     enabled: true,
     log(...args) {
       if (!this.enabled) return;
-      console.log("[DreddarkAPI]", ...args);
+      console.log("[Dreddark]", ...args);
     },
   };
   const rankValue = {
@@ -103,40 +106,105 @@ const version = "2.1.3";
   };
 
   const ship = {
-    promote(user, rank) {
-      if (!(rank in rankValue)) return false;
+    promote(user, targetRank) {
+      if (!(targetRank in rankValue)) return false;
+      const ctx = ship.getUserContext(user);
+      if (!ctx) return false;
+      if (ctx.currentRank >= targetRank) return false;
+      ship.applyRank(ctx.select, targetRank);
+      return true;
+    },
+
+    demote(user, targetRank) {
+      if (!(targetRank in rankValue)) return false;
+      const ctx = ship.getUserContext(user);
+      if (!ctx) return false;
+      if (ctx.currentRank <= targetRank) return false;
+      ship.applyRank(ctx.select, targetRank);
+      return true;
+    },
+
+    getUserContext(user) {
       const btn = document.getElementById("team_manager_button");
       const menu = document.getElementById("team_menu");
-      if (!btn || !menu) return false;
+      if (!btn || !menu) return null;
       btn.click();
       menu.classList.add("hidden");
-      observe.wait("#team_players_inner").then(() => {
-        const codes = document.querySelectorAll(
-          "#team_players_inner td > code",
-        );
-        const code = [...codes].find((e) => e.textContent === user);
+      return observe.wait("#team_players_inner").then(() => {
+        const codes = document.querySelectorAll("#team_players_inner td > code");
+        const code = [...codes].find(e => e.textContent === user);
         const select = code?.closest("tr")?.querySelector("select");
-        if (!select) return;
-        select.value = rank;
-        select.dispatchEvent(new Event("change"));
-        setTimeout(() => {
-          menu.classList.remove("hidden");
-          btn.click();
-        }, 250);
+        if (!select) return null;
+        return {
+          select,
+          currentRank: Number(select.value),
+        };
+      });
+    },
+
+    applyRank(select, rank) {
+      select.value = rank;
+      select.dispatchEvent(new Event("change"));
+      setTimeout(() => {
+        const btn = document.getElementById("team_manager_button");
+        const menu = document.getElementById("team_menu");
+        if (!btn || !menu) return;
+        menu.classList.remove("hidden");
+        btn.click();
+      }, 250);
+    },
+
+    join(id) {
+      const items = document.querySelectorAll(".shipyard-item .sy-id");
+      const node = [...items].find(e => e.textContent === `{${id}}`);
+      const shipNode = node?.closest(".shipyard-item");
+      if (!shipNode) return false;
+      shipNode.click();
+      return true;
+    },
+
+    getCurrentJoinedShip() {
+      return storage.session.get("ship.current") || null;
+    },
+    initSaveJoinedShip() {
+      const shipyard = document.querySelector(".shipyard-bin");
+      if (!shipyard) return false;
+      shipyard.addEventListener("click", e => {
+        const shipNode = e.target.closest(".shipyard-item");
+        if (!shipNode) return;
+        const idNode = shipNode.querySelector(".sy-id");
+        if (!idNode) return;
+        const id = idNode.textContent.replace(/[{}]/g, "");
+        const title = shipNode.querySelector(".sy-title h3")?.textContent || "";
+        const crew = Number(
+          shipNode.querySelector(".sy-crew")?.textContent.replace(/\D+/g, ""),
+        ) || 0;
+        const style = getComputedStyle(shipNode);
+        storage.session.set("ship.current", {
+          id,
+          title,
+          crew,
+          backgroundColor: style.backgroundColor,
+          backgroundImage: style.backgroundImage,
+          joinedAt: Date.now(),
+          node: shipNode,
+        });
       });
       return true;
+    },
+    clearCurrentShip() {
+      storage.session.delete("ship.current");
     },
   };
 
   const utils = {
     validateName(name) {
-      if (name.length > 20) return "Name too long.";
-      if (name.length < 3) return "Name too short.";
-      if (name.startsWith(" ")) return "Name can not start with space.";
-      if (name.endsWith(" ")) return "Name can not end with space.";
-      if (name.includes("  ")) return "Name can not contain double spaces.";
-      const m = name.match(/[^a-z0-9 ]/gi);
-      if (m) return `Invalid character: '${m[0]}'`;
+      if (name.length > 20) return "NAME_TOO_LONG";
+      if (name.length < 3) return "NAME_TOO_SHORT";
+      if (name.startsWith(" ")) return "STARTS_WITH_SPACE";
+      if (name.endsWith(" ")) return "ENDS_WITH_SPACE";
+      if (name.includes("  ")) return "DOUBLE_SPACE";
+     if (/[^a-z0-9 ]/i.test(name)) return "INVALID_CHARACTER";
       return null;
     },
   };
@@ -429,16 +497,20 @@ const version = "2.1.3";
         return {};
       }
     };
-    const setOutfit = (appearance, isInGame) => {
-      if (!appearance || typeof appearance !== "object") return;
+    const setOutfit = (isInGame) => {
+      if (isInGame) {
+        if (!wsReady || !msgpackReady) return;
+        wsSend(
+          window.msgpack.encode({
+            type: 7,
+            outfit: getSettings().player_appearance || {},
+          }),
+        );
+        return;
+      }
       const settings = getSettings();
-      settings.player_appearance = appearance;
+      settings.player_appearance ||= {};
       localStorage.setItem("dredark_user_settings", JSON.stringify(settings));
-      if (!isInGame || !wsReady || !msgpackReady) return;
-      wsSend(window.msgpack.encode({
-        type: 7,
-        outfit: appearance,
-      }));
     };
     return {
       initWsHook,
@@ -461,9 +533,7 @@ const version = "2.1.3";
     use(fn) {
       try {
         fn(Dreddark);
-      } catch (err) {
-        console.error(err);
-      }
+      } catch {}
     },
   };
 

@@ -1,25 +1,52 @@
 # Simple Dreddark API v2
 
 ## Overview
-Simple Dreddark API is a **client-side developer API** for **drednot.io**.
-It provides structured access to **chat parsing, ship events, command handling, storage, and utilities**.
-**Important**: All data is inferred from the DOM and UI behavior. Nothing is server-trusted.
+
+Simple Dreddark API is a **client-side developer API** for **drednot.io**, delivered as a Tampermonkey userscript.
+It exposes structured access to **chat parsing, events, commands, ship helpers, storage, outfit control, and utilities**.
+
+**Important**:
+
+* Everything is inferred from the DOM, UI behavior, and client WebSocket messages
+* Nothing is server-trusted
+* All logic runs entirely on the client
 
 ---
 
-## Initialization & Lifecycle
+## Installation
 
-The API is **opt-in**. Nothing runs automatically.
+Install as a **Tampermonkey userscript**:
+
+* Script name: `Simple Dreddark API v2`
+* Matches:
+
+  * `https://drednot.io/*`
+  * `https://test.drednot.io/*`
+
+Once installed, the API is exposed globally.
+
+## Using in DevTools (No Tampermonkey)
+
+If you are developing or testing locally, you can load the API directly from GitHub using DevTools.
+
+### One-time Manual Load
+
+Paste this into the browser console:
+
 ```js
-Dreddark.init();
+fetch("https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/master/main.js
+")
+  .then(r => r.text())
+  .then(code => {
+    const s = document.createElement("script");
+    s.textContent = code;
+    document.documentElement.appendChild(s);
+  });
 ```
 
-Optional cleanup:
-```js
-Dreddark.destroy();
-```
+### Auto-load via DevTools Snippet
 
-Destroy disconnects observers and stops all parsing.
+For convenience, save the above as a **DevTools Snippet** and run it after each refresh.
 
 ---
 
@@ -31,52 +58,81 @@ window.Dreddark
 
 ---
 
-## API Surface
+## Version
 
 ```js
-Dreddark.version              // API version string
-Dreddark.init()               // Start all observers
-Dreddark.destroy()            // Stop all observers
-
-Dreddark.outfit               // In-game outfits
-Dreddark.events               // Event bus
-Dreddark.chat                 // Chat send + observers
-Dreddark.commands             // Command router
-Dreddark.ship                 // Ship / role helpers
-Dreddark.utils                // Utility helpers
-Dreddark.storage              // Session & persistent storage
-Dreddark.debug                // Debug logging control
-Dreddark.use(fn)              // Plugin hook
+Dreddark.version // "2.1.4"
 ```
 
 ---
 
-## Events
+## Initialization & Lifecycle
 
-### Registering Listeners
+The API does **not** auto-start observers.
+
+### Start chat & parsing
 
 ```js
-Dreddark.events.on("chat", handler);
+await Dreddark.chat.init();
 ```
 
-### Supported Event Types
+### Stop chat parsing
 
-| Event        | Description          |
-| ------------ | -------------------- |
-| `chat`       | Player chat message  |
-| `shipJoin`   | Player joined ship   |
-| `shipLeave`  | Player left ship     |
-| `roleChange` | Promotion / demotion |
-| `mission`    | Mission announcement |
-| `warning`    | System warning       |
+```js
+Dreddark.chat.destroy();
+```
 
-### Base Event Fields
+Other subsystems are always available unless explicitly initialized (see Outfit API).
 
-Every event contains:
+---
+
+## API Surface
+
+```js
+Dreddark.version
+Dreddark.rankValue
+Dreddark.debug
+Dreddark.events
+Dreddark.chat
+Dreddark.commands
+Dreddark.ship
+Dreddark.observe
+Dreddark.storage
+Dreddark.utils
+Dreddark.outfit
+Dreddark.use(fn)
+```
+
+---
+
+## Events System
+
+### Register Listener
+
+```js
+Dreddark.events.on("chat", e => {});
+```
+
+### Supported Events
+
+| Event        | Description                |
+| ------------ | -------------------------- |
+| `chat`       | Player chat message        |
+| `warning`    | System warning line        |
+| `mission`    | Mission announcement       |
+| `roleChange` | Promotion / demotion event |
+| `shipJoin`   | Player joined ship         |
+| `shipLeave`  | Player left ship           |
+
+---
+
+## Base Event Payload
+
+All events include:
 
 ```js
 {
-  raw: "Original chat line",
+  raw: String,
   timestamp: Number,
   trusted: false,
   isUser: Boolean,
@@ -84,13 +140,15 @@ Every event contains:
 }
 ```
 
-### Chat Event Payload
+---
+
+## Chat Event Payload
 
 ```js
 {
-  user: "Player",
-  role: "Crew",
-  message: "hello",
+  user: String,
+  role: String,
+  message: String,
   badges: [{ img, text }],
   isUser: true,
   isSystem: false
@@ -101,34 +159,31 @@ Every event contains:
 
 ## Chat API
 
-### Sending Messages
-
-```js
-Dreddark.chat.send("Hello world");
-```
-
-Features:
-
-* Message queue
-* Rate limiting
-* Automatic truncation (>250 chars)
-
-### Chat Lifecycle
-
-Chat observation is controlled by:
+### Initialize Chat Observer
 
 ```js
 await Dreddark.chat.init();
+```
+
+### Destroy Observer
+
+```js
 Dreddark.chat.destroy();
+```
+
+### Send Message
+
+```js
+Dreddark.chat.send("Hello world");
 ```
 
 ---
 
 ## Command System
 
-Commands are **client-side only** and parsed from chat messages.
+Commands are parsed **client-side** from chat messages.
 
-### Registering Commands
+### Register Command
 
 ```js
 Dreddark.commands.register("ping", {
@@ -137,28 +192,81 @@ Dreddark.commands.register("ping", {
   sessionCooldown: 5000,
   persistCooldown: 60000,
   globalCooldown: 1000,
-
   run(e, args) {
     Dreddark.chat.send("pong");
   }
 });
 ```
 
-### Command Options
+### Options
 
-| Option            | Description                                 |
-| ----------------- | ------------------------------------------- |
-| `prefix`          | Command prefix (per-command)                |
-| `rankRequire`     | Minimum role rank                           |
-| `sessionCooldown` | Cooldown per user per session               |
-| `persistCooldown` | Cooldown per user persisted in localStorage |
-| `globalCooldown`  | Global cooldown shared by all users         |
+| Option            | Description                              |
+| ----------------- | ---------------------------------------- |
+| `prefix`          | Per-command prefix (default `?`)         |
+| `rankRequire`     | Minimum numeric rank required            |
+| `sessionCooldown` | Per-user session cooldown (ms)           |
+| `persistCooldown` | Per-user persistent cooldown (ms)        |
+| `globalCooldown`  | Global cooldown shared by all users (ms) |
+| `args`            | Argument validation descriptors          |
+
+### Default Prefix
+
+```js
+Dreddark.commands.setDefaultPrefix("!");
+```
+
+---
+
+## Rank Values
+
+```js
+Dreddark.rankValue
+```
+
+| Value | Role    |
+| ----: | ------- |
+|   `0` | Guest   |
+|   `1` | Crew    |
+|   `3` | Captain |
+
+---
+
+## Ship API
+
+### Promote / Demote
+
+```js
+await Dreddark.ship.promote("username", 1);
+await Dreddark.ship.demote("username", 0);
+```
+
+### Join Ship
+
+```js
+Dreddark.ship.join("ABC123");
+```
+
+### Track Joined Ship
+
+```js
+Dreddark.ship.initSaveJoinedShip();
+```
+
+Retrieve:
+
+```js
+Dreddark.ship.getCurrentJoinedShip();
+```
+
+Clear:
+
+```js
+Dreddark.ship.clearCurrentShip();
+```
 
 ---
 
 ## Storage
-
-Structured storage is provided under `Dreddark.storage`.
 
 ### Session Storage
 
@@ -166,7 +274,7 @@ Structured storage is provided under `Dreddark.storage`.
 Dreddark.storage.session
 ```
 
-* In-memory only
+* In-memory `Map`
 * Cleared on reload
 
 ### Persistent Storage
@@ -176,76 +284,68 @@ Dreddark.storage.persist
 ```
 
 * Backed by `localStorage`
-* Namespaced under `DreddarkAPI.persist`
-* Used for cooldowns and long-lived data
+* Namespace key: `DreddarkAPI.persist`
 
----
-
-## Ship / Role Helpers
-
-Promote or demote users via UI interaction:
+Methods:
 
 ```js
-Dreddark.ship.promote("username", 1);
-```
-
-Rank values:
-
-* `0` - Guest
-* `1` - Crew
-* `3` - Captain
-
----
-
-## Outfit API
-
-Provides controlled outfit updates via WebSocket interception.
-
-### Initialization (MANDATORY)
-
-Must run at **document-start**:
-
-```js
-Dreddark.outfit.initWsHook("dreddarkAPI", outfit_object_goes_here);
-```
-
-* Loads `msgpack` automatically if missing
-* No-ops if executed late
-
-### Applying Outfit
-
-```js
-Dreddark.outfit.setOutfit(true, outfit_object_goes_here);  // in-game
-Dreddark.outfit.setOutfit(false, outfit_object_goes_here); // menu
+get(ns, key)
+set(ns, key, value)
+del(ns, key)
 ```
 
 ---
 
 ## Utils
 
-### Validate Player Names
+### Validate Player Name
 
 ```js
 const err = Dreddark.utils.validateName("My Name");
-if (err) Dreddark.chat.send(err);
 ```
+
+Possible errors:
+
+* `NAME_TOO_LONG`
+* `NAME_TOO_SHORT`
+* `STARTS_WITH_SPACE`
+* `ENDS_WITH_SPACE`
+* `DOUBLE_SPACE`
+* `INVALID_CHARACTER`
+
+Returns `null` if valid.
 
 ---
 
-## Debugging
+## Outfit API (Advanced)
 
-Debug logging is centralized:
+Allows outfit manipulation via WebSocket interception.
+
+### Initialization (REQUIRED)
+
+Must run at **document-start**:
 
 ```js
-Dreddark.debug.enabled = true;
+Dreddark.outfit.initWsHook("dreddarkAPI");
 ```
 
-All internal parsing and event emission logs route through this flag.
+No-ops if executed too late
+
+### Apply Outfit
+
+```js
+Dreddark.outfit.setOutfit(true);  // in-game
+Dreddark.outfit.setOutfit(false); // not in-game
+```
+
+Uses current `player_appearance` from localStorage.
 
 ---
 
 ## Plugins
-Extend the API without forking:
+
+Extend without forking:
+
 ```js
 Dreddark.use(api => {
   api.events.on("mission", e => {
@@ -254,7 +354,9 @@ Dreddark.use(api => {
 });
 ```
 
-Plugins receive the live API instance and may:
+Plugins may:
+
 * Register events
 * Register commands
 * Use storage
+* Call any exposed API

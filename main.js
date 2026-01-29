@@ -213,40 +213,37 @@ const version = "2.1.5";
 
   const client = {
     async accountInfo() {
-      let info;
-      await fetch(`https://drednot.io/account/status`)
-        .then((res) => res.json())
-        .then((json) => {
-          if (json.account) {
-            info = {
-              name: json.account.name,
-              isRegistered: json.account.is_registered === true,
-            };
-          } else if (json.account === null)
-            info = {
-              ma,e: json.account.name,
-              isRegistered:  false,
-            };
-        })
-        .catch(() => {});
+      let info = null;
+      try {
+        const res = await fetch("https://drednot.io/account/status");
+        const json = await res.json();
+        if (json?.account) {
+          info = {
+            name: json.account.name ?? null,
+            isRegistered: json.account.is_registered === true,
+          };
+        } else {
+          info = {
+            name: null,
+            isRegistered: false,
+          };
+        }
+      } catch {}
       return info;
     },
     async getAccount(key) {
       try {
-        const info = await accountInfo();
-        if (!info?.[key]) return null;
-        return info?.[key];
-      } catch (error) {
+        const info = await this.accountInfo();
+        return info?.[key] ?? null;
+      } catch {
         return null;
       }
     },
     async getClientUsername() {
-      const name = await getAccount("name");
-      return name;
+      return await this.getAccount("name");
     },
     async isClientRegistered() {
-      const isRegistered = await getAccount("isRegistered");
-      return isRegistered === true;
+      return (await this.getAccount("isRegistered")) === true;
     },
   };
 
@@ -434,11 +431,7 @@ const version = "2.1.5";
                       b.querySelector(".tooltip")?.textContent.trim() || null,
                   }))
                 : [];
-              const message = text
-                .split(":")
-                .slice(1)
-                .join(":")
-                .trim();
+              const message = text.split(":").slice(1).join(":").trim();
               if (!message) {
                 debug.log("skip empty message", text);
                 continue;

@@ -328,26 +328,38 @@ const version = "2.1.5";
     };
   })();
   const chat = (() => {
+    // for chat
     const queue = [];
     let busy = false;
-    const limit = 1000;
+    const delay = 1000;
+    // for observer
     let chatObserver = null;
     let started = false;
+    const openChat = () => {
+      const chatBox = document.getElementById("chat");
+      const sendBtn = document.getElementById("chat-send");
+      if (chatBox?.classList.contains("closed")) sendBtn?.click();
+    };
     const sendNext = () => {
       if (busy || !queue.length) return;
-      const input = document.getElementById("chat-input");
-      const btn = document.getElementById("chat-send");
-      if (!input || !btn) return;
-      busy = true;
-      let msg = queue.shift();
-      if (msg.length > 250) msg = msg.slice(0, 247) + "...";
-      input.value = msg;
-      input.dispatchEvent(new Event("input", { bubbles: true }));
-      btn.click();
-      setTimeout(() => {
-        busy = false;
-        sendNext();
-      }, limit);
+      openChat();
+      requestAnimationFrame(() => {
+        const input = document.getElementById("chat-input");
+        const btn = document.getElementById("chat-send");
+        if (!input || !btn) return;
+        busy = true;
+        const max = input.maxLength > 0 ? input.maxLength - 3 : 247;
+        let msg = String(queue.shift());
+        if (msg.length > max) msg = msg.slice(0, max) + "...";
+        input.focus();
+        input.value = msg;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        btn.click();
+        setTimeout(() => {
+          busy = false;
+          sendNext();
+        }, delay);
+      });
     };
     const init = async () => {
       if (started) return false;

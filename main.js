@@ -355,34 +355,36 @@ const version = "2.1.5";
       const target = await observe.wait("#chat-content");
       chatObserver = new MutationObserver((muts) => {
         for (const m of muts) {
-          const nodes = [];
-          if (m.target instanceof HTMLElement) nodes.push(m.target);
-          for (const n of m.addedNodes)
-            if (n instanceof HTMLElement) nodes.push(n);
-          for (const n of nodes) {
-            const b = n.querySelector?.("b");
+          for (const p of m.addedNodes) {
+            if (!(p instanceof HTMLElement)) continue;
+            const b = p.querySelector("b");
             if (!b) {
-              debug.log("skip: no <b>", n);
+              debug.log("skip: no <b>", p);
               continue;
             }
             const badgeEls = b.querySelectorAll(".user-badge-small");
-            const spans = b.querySelectorAll("span");
             const bdis = b.querySelectorAll("bdi");
-            const text = b.textContent.trim();
+            const roleSpan = b.querySelector("span");
+            const rawText = b.textContent.replace(/\s+/g, " ").trim();
+            const userMessage = [...p.childNodes]
+              .filter((n) => n.nodeType === Node.TEXT_NODE)
+              .map((n) => n.textContent)
+              .join("")
+              .trim();
             const isWarning =
-              b.classList.contains("warning") || text.startsWith("WARNING:");
-            const hasColon = text.includes(":");
-            const hasUser = !!b.querySelector("bdi");
-            const isUser = !isWarning && hasColon && hasUser;
-            const isSystem = !isUser;
+              b.classList.contains("warning") || rawText.startsWith("WARNING:");
+            const hasUser = !!bdis[0];
+            const hasColon = rawText.includes(":");
+            const isUser = hasUser && hasColon && !isWarning;
+            const isSystem = !isUser && !isWarning;
             const base = {
               trusted: false,
               timestamp: Date.now(),
-              raw: text,
+              raw: rawText,
               isUser,
               isSystem,
             };
-            debug.log("parsed", { text, isUser, isSystem });
+            debug.log("parsed", { userMessage, rawText, isUser, isSystem });
             if (isWarning) {
               debug.log("emit warning", base);
               events.emit("warning", base);
@@ -390,23 +392,23 @@ const version = "2.1.5";
             }
             if (
               isSystem &&
-              spans[0]?.textContent === "SYSTEM" &&
-              text.includes("New mission:")
+              roleSpan?.textContent === "SYSTEM" &&
+              rawText.includes("New mission:")
             ) {
-              const isOpen = text.includes("NOW");
+              const isOpen = rawText.includes("NOW");
               const name =
-                text.split("New mission:")[1]?.split(".")[0]?.trim() || "";
-              const location = text.match(/in (.*?) (NOW|in)/)?.[1] || "";
+                rawText.split("New mission:")[1]?.split(".")[0]?.trim() || "";
+              const location = rawText.match(/in (.*?) (NOW|in)/)?.[1] || "";
               debug.log("emit mission", { name, location, isOpen });
               events.emit("mission", { ...base, name, location, isOpen });
               continue;
             }
             if (
               isSystem &&
-              (text.includes("was promoted to") ||
-                text.includes("was demoted to"))
+              (rawText.includes("was promoted to") ||
+                rawText.includes("was demoted to"))
             ) {
-              if (bdis.length >= 2 && spans.length >= 2) {
+              if (bdis.length >= 2) {
                 debug.log("emit roleChange", {
                   targetUser: bdis[0].textContent,
                   byUser: bdis[1].textContent,
@@ -415,15 +417,14 @@ const version = "2.1.5";
                   ...base,
                   targetUser: bdis[0].textContent,
                   byUser: bdis[1].textContent,
-                  newRole: spans[0].textContent,
-                  oldRole: spans[1].textContent,
+                  newRole: roleSpan?.textContent || null,
                 });
               }
               continue;
             }
             if (isUser) {
               const user = bdis[0]?.textContent || "unknown";
-              const role = spans[0]?.textContent || "Guest";
+              const role = roleSpan?.textContent || "Guest";
               const badges = badgeEls.length
                 ? [...badgeEls].map((b) => ({
                     img: b.querySelector("img")?.getAttribute("src") || null,
@@ -431,32 +432,32 @@ const version = "2.1.5";
                       b.querySelector(".tooltip")?.textContent.trim() || null,
                   }))
                 : [];
-              const message = text.split(":").slice(1).join(":").trim();
+              const message = userMessage;
               if (!message) {
-                debug.log("skip empty message", text);
+                debug.log("skip empty message", rawText);
                 continue;
               }
               debug.log("emit chat", { user, role, message });
               events.emit("chat", { ...base, user, role, message, badges });
               continue;
             }
-            if (isSystem && text.includes("joined the ship.")) {
+            if (isSystem && rawText.includes("joined the ship.")) {
               const user = bdis[0]?.textContent || "unknown";
               debug.log("emit shipJoin", user);
               events.emit("shipJoin", { ...base, user });
               continue;
             }
-            if (isSystem && text.includes("left the ship.")) {
+            if (isSystem && rawText.includes("left the ship.")) {
               const user = bdis[0]?.textContent || "unknown";
               debug.log("emit shipLeave", user);
               events.emit("shipLeave", { ...base, user });
               continue;
             }
-            debug.log("unhandled line", text);
+            debug.log("unhandled line", rawText);
           }
         }
       });
-      chatObserver.observe(target, { childList: true, subtree: true });
+      chatObserver.observe(target, { childList: true });
       return true;
     };
     const destroy = () => {

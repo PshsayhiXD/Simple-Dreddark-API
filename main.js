@@ -18,7 +18,7 @@ const version = "2.1.5";
   let defaultCommandPrefix = "?";
 
   const debug = {
-    enabled: true,
+    enabled: false,
     log(...args) {
       if (!this.enabled) return;
       console.log("[Dreddark]", ...args);

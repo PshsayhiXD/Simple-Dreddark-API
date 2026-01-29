@@ -34,8 +34,7 @@ If you are developing or testing locally, you can load the API directly from Git
 Paste this into the browser console:
 
 ```js
-fetch("https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/master/main.js
-")
+fetch("https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/master/main.js")
   .then(r => r.text())
   .then(code => {
     const s = document.createElement("script");

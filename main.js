@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simple Dreddark API v2
 // @namespace    http://tampermonkey.net/
-// @version      2.1.4
+// @version      2.1.5
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
 // @match        https://drednot.io/*
@@ -11,12 +11,11 @@
 // ==/UserScript==
 
 const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-const version = "2.1.4";
+const version = "2.1.5";
 (() => {
   "use strict";
   // ====>====>====>====>====> CONFIG <====<====<====<====<====
   let defaultCommandPrefix = "?";
-
 
   const debug = {
     enabled: true,
@@ -131,8 +130,10 @@ const version = "2.1.4";
       btn.click();
       menu.classList.add("hidden");
       return observe.wait("#team_players_inner").then(() => {
-        const codes = document.querySelectorAll("#team_players_inner td > code");
-        const code = [...codes].find(e => e.textContent === user);
+        const codes = document.querySelectorAll(
+          "#team_players_inner td > code",
+        );
+        const code = [...codes].find((e) => e.textContent === user);
         const select = code?.closest("tr")?.querySelector("select");
         if (!select) return null;
         return {
@@ -156,7 +157,7 @@ const version = "2.1.4";
 
     join(id) {
       const items = document.querySelectorAll(".shipyard-item .sy-id");
-      const node = [...items].find(e => e.textContent === `{${id}}`);
+      const node = [...items].find((e) => e.textContent === `{${id}}`);
       const shipNode = node?.closest(".shipyard-item");
       if (!shipNode) return false;
       shipNode.click();
@@ -169,16 +170,17 @@ const version = "2.1.4";
     initSaveJoinedShip() {
       const shipyard = document.querySelector(".shipyard-bin");
       if (!shipyard) return false;
-      shipyard.addEventListener("click", e => {
+      shipyard.addEventListener("click", (e) => {
         const shipNode = e.target.closest(".shipyard-item");
         if (!shipNode) return;
         const idNode = shipNode.querySelector(".sy-id");
         if (!idNode) return;
         const id = idNode.textContent.replace(/[{}]/g, "");
         const title = shipNode.querySelector(".sy-title h3")?.textContent || "";
-        const crew = Number(
-          shipNode.querySelector(".sy-crew")?.textContent.replace(/\D+/g, ""),
-        ) || 0;
+        const crew =
+          Number(
+            shipNode.querySelector(".sy-crew")?.textContent.replace(/\D+/g, ""),
+          ) || 0;
         const style = getComputedStyle(shipNode);
         storage.session.set("ship.current", {
           id,
@@ -204,8 +206,45 @@ const version = "2.1.4";
       if (name.startsWith(" ")) return "STARTS_WITH_SPACE";
       if (name.endsWith(" ")) return "ENDS_WITH_SPACE";
       if (name.includes("  ")) return "DOUBLE_SPACE";
-     if (/[^a-z0-9 ]/i.test(name)) return "INVALID_CHARACTER";
+      if (/[^a-z0-9 ]/i.test(name)) return "INVALID_CHARACTER";
       return null;
+    },
+  };
+
+  const client = {
+    async accountInfo() {
+      let accountInfo;
+      await fetch(`https://drednot.io/account/status`)
+        .then((res) => res.json())
+        .then((json) => {
+          if (json.account) {
+            accountInfo = {
+              name: json.account.name,
+              isRegistered: json.account.is_registered === true,
+            };
+          } else if (json.account === null)
+            accountInfo = {
+              noAccount: true,
+            };
+        })
+        .catch(() => {});
+      return accountInfo;
+    },
+    async getAccount(key) {
+      try {
+        const info = await AccountInfo();
+        if (!info?.[key]) return null;
+        return info?.[key];
+      } catch (error) {
+        return null;
+      }
+    },
+    async getClientUsername() {
+      return await getAccount("name");
+    },
+    async isClientRegistered() {
+      const isRegistered = await getAccount("isRegistered");
+      return isRegistered === true;
     },
   };
 
@@ -397,8 +436,7 @@ const version = "2.1.4";
                 .split(":")
                 .slice(1)
                 .join(":")
-                .trim()
-                .toLowerCase();
+                .trim();
               if (!message) {
                 debug.log("skip empty message", text);
                 continue;
@@ -535,6 +573,7 @@ const version = "2.1.4";
         fn(Dreddark);
       } catch {}
     },
+    client,
   };
 
   root.Dreddark = Dreddark;

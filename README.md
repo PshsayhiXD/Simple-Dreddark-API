@@ -60,7 +60,7 @@ window.Dreddark
 ## Version
 
 ```js
-Dreddark.version // "2.1.4"
+Dreddark.version // "2.1.5"
 ```
 
 ---
@@ -88,6 +88,7 @@ Other subsystems are always available unless explicitly initialized (see Outfit 
 ## API Surface
 
 ```js
+Dreddark.client
 Dreddark.version
 Dreddark.rankValue
 Dreddark.debug
@@ -338,6 +339,19 @@ Dreddark.outfit.setOutfit(false); // not in-game
 ```
 
 Uses current `player_appearance` from localStorage.
+
+---
+
+## Client
+
+```js
+Dreddark.client.accountInfo().then(console.log); // logs client account json
+Dreddark.client.getAccount("name").then(console.log); // logs a key in account json
+Dreddark.client.getClientUsername().then(console.log); // logs Client's username
+Dreddark.client.isClientRegistered().then(console.log); // boolean, false if account is annoymously
+```
+
+Client stuffs.
 
 ---
 

@@ -321,9 +321,11 @@ const version = "2.1.5";
     return {
       register(name, handler) {
         map[name] = handler;
+        return true;
       },
       setDefaultPrefix(p) {
         if (typeof p === "string" && p.length) defaultCommandPrefix = p;
+        return p;
       },
     };
   })();

@@ -565,6 +565,7 @@ const version = "2.1.5";
   })();
 
   const Dreddark = {
+    defaultCommandPrefix,
     version,
     rankValue,
     debug,

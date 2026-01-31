@@ -364,7 +364,7 @@ const version = "2.1.5";
       });
     };
     const init = async () => {
-      const client = await client.getClientUsername();
+      const clientName = await client.getClientUsername();
       if (started) return false;
       started = true;
       const target = await observe.wait("#chat-content");
@@ -440,7 +440,7 @@ const version = "2.1.5";
               continue;
             }
             if (isUser) {
-              if (user === client) await new Promise(r => setTimeout(r, 1000))
+              if (user === clientName) await new Promise(r => setTimeout(r, 1000))
               const badges = badgeEls.length
                 ? [...badgeEls].map((b) => ({
                     img: b.querySelector("img")?.getAttribute("src") || null,

@@ -368,7 +368,7 @@ const version = "2.1.5";
       if (started) return false;
       started = true;
       const target = await observe.wait("#chat-content");
-      chatObserver = new MutationObserver((muts) => {
+      chatObserver = new MutationObserver(async (muts) => {
         for (const m of muts) {
           for (const p of m.addedNodes) {
             if (!(p instanceof HTMLElement)) continue;
@@ -392,8 +392,8 @@ const version = "2.1.5";
             const hasColon = rawText.includes(":");
             const isUser = hasUser && hasColon && !isWarning;
             const isSystem = !isUser && !isWarning;
-            const user = isUser ? (bdis[0]?.textContent || "unknown") || null;
-            const role = isUser ? (roleSpan?.textContent || "Guest") || null;
+            const user = isUser ? (bdis[0]?.textContent || "unknown") : null;
+            const role = isUser ? (roleSpan?.textContent || "Guest") : null;
             const base = {
               trusted: false,
               timestamp: Date.now(),

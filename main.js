@@ -308,7 +308,7 @@ const version = "2.1.5";
             }
           }
         }
-        c.run(e, args);
+        c.run(e, args, user);
         if (c.sessionCooldown)
           storage.session.set(cdNs, userKey, now() + c.sessionCooldown);
         if (c.persistCooldown)
@@ -364,6 +364,7 @@ const version = "2.1.5";
       });
     };
     const init = async () => {
+      const client = await client.getClientUsername();
       if (started) return false;
       started = true;
       const target = await observe.wait("#chat-content");
@@ -391,6 +392,8 @@ const version = "2.1.5";
             const hasColon = rawText.includes(":");
             const isUser = hasUser && hasColon && !isWarning;
             const isSystem = !isUser && !isWarning;
+            const user = isUser ? (bdis[0]?.textContent || "unknown") || null;
+            const role = isUser ? (roleSpan?.textContent || "Guest") || null;
             const base = {
               trusted: false,
               timestamp: Date.now(),
@@ -437,8 +440,7 @@ const version = "2.1.5";
               continue;
             }
             if (isUser) {
-              const user = bdis[0]?.textContent || "unknown";
-              const role = roleSpan?.textContent || "Guest";
+              if (user === client) await new Promise(r => setTimeout(r, 1000))
               const badges = badgeEls.length
                 ? [...badgeEls].map((b) => ({
                     img: b.querySelector("img")?.getAttribute("src") || null,

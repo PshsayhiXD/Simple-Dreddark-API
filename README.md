@@ -60,7 +60,7 @@ window.Dreddark
 ## Version
 
 ```js
-Dreddark.version // "2.1.5"
+Dreddark.version // "2.1.6"
 ```
 
 ---
@@ -273,7 +273,7 @@ The storage system is **factory-based**, **pluggable**, and **tree-based**.
 Storage is created by calling:
 
 ```js
-const storage = DreddarkAPI.createStorage({ options });
+const storage = Dreddark.createStorage({ options });
 ```
 
 Each call returns a **new independent storage instance**.
@@ -285,7 +285,7 @@ Each call returns a **new independent storage instance**.
 ### Default Storage
 
 ```js
-const storage = DreddarkAPI.createStorage();
+const storage = Dreddark.createStorage();
 ```
 
 Uses the default configuration:
@@ -303,7 +303,7 @@ Uses the default configuration:
 ### Custom Configuration
 
 ```js
-const storage = DreddarkAPI.createStorage({
+const storage = Dreddark.createStorage({
   defaultDatabase: "localstorage",
   namespace: "MyPlugin",
 });
@@ -336,7 +336,7 @@ storage.del("user.settings.theme");
 ### Example structure
 
 ```js
-const storage = DreddarkAPI.createStorage({
+const storage = Dreddark.createStorage({
   defaultDatabase: "localstorage",
   namespace: "MyPlugin",
 });

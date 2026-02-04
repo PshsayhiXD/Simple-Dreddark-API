@@ -266,33 +266,144 @@ Dreddark.ship.clearCurrentShip();
 
 ---
 
-## Storage
+## Storage System
 
-### Session Storage
+The storage system is **factory-based**, **pluggable**, and **tree-based**.
 
-```js
-Dreddark.storage.session
-```
-
-* In-memory `Map`
-* Cleared on reload
-
-### Persistent Storage
+Storage is created by calling:
 
 ```js
-Dreddark.storage.persist
+const storage = DreddarkAPI.createStorage({ options });
 ```
 
-* Backed by `localStorage`
-* Namespace key: `DreddarkAPI.persist`
+Each call returns a **new independent storage instance**.
 
-Methods:
+---
+
+## Creating Storage
+
+### Default Storage
 
 ```js
-get(ns, key)
-set(ns, key, value)
-del(ns, key)
+const storage = DreddarkAPI.createStorage();
 ```
+
+Uses the default configuration:
+
+```js
+{
+  defaultDatabase: "localstorage",
+  namespace: "DreddarkAPI",
+  readonly: false
+}
+```
+
+---
+
+### Custom Configuration
+
+```js
+const storage = DreddarkAPI.createStorage({
+  defaultDatabase: "localstorage",
+  namespace: "MyPlugin",
+});
+```
+
+---
+
+## Usage
+
+Storage uses **dot-path tree access**.
+
+### Set value
+
+```js
+storage.set("user.settings.theme", "dark");
+```
+
+### Get value
+
+```js
+storage.get("user.settings.theme"); // "dark"
+```
+
+### Delete value
+
+```js
+storage.del("user.settings.theme");
+```
+
+### Example structure
+
+```js
+const storage = DreddarkAPI.createStorage({
+  defaultDatabase: "localstorage",
+  namespace: "MyPlugin",
+});
+persist: { // localstorage
+    "__root__": {
+        "key": value
+    }
+}
+```
+
+All values are stored under a single internal root object.
+
+---
+
+## Supported Backends
+
+The backend is selected using `defaultDatabase`.
+
+| Backend          | Description |
+|------------------|------------|
+| `localstorage`   | Persistent browser storage |
+| `sessionstorage` | Cleared on tab reload |
+| `memory`         | In-memory only |
+| `cookie`         | Cookie-based storage |
+| `url`            | URL-based state |
+| `indexeddb`      | IndexedDB key-value store |
+| `broadcast`      | Cross-tab shared memory |
+
+All backends expose the same API:
+
+```js
+get(path)
+set(path, value)
+del(path)
+```
+
+---
+
+## Backends
+
+### localstorage / sessionstorage
+- JSON-backed
+- Namespaced
+- Automatically merged on write
+
+### memory
+- Non-persistent
+- Resets on reload
+
+### cookie
+- Path and max-age configurable
+
+### url
+Supports:
+- Query
+- Hash
+- Path
+
+Updates use `history.replaceState`.
+
+### indexeddb
+- Async-backed
+- Auto-creates store
+
+### broadcast
+- Syncs data across tabs
+- Uses `BroadcastChannel`
 
 ---
 

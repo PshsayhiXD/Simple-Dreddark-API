@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Simple Dreddark API v2
 // @namespace    http://tampermonkey.net/
-// @version      2.1.5
+// @version      2.1.6
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
 // @match        https://drednot.io/*
@@ -11,7 +11,8 @@
 // ==/UserScript==
 
 const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-const version = "2.1.5";
+const version = "2.1.6";
+const deprecate=(r)=>{console.warn("%cDEPRECATED%c "+r,"background:#ff3b3b;color:#fff;font-weight:bold;padding:2px 6px;border-radius:3px","color:inherit")};
 (() => {
   "use strict";
   // ====>====>====>====>====> CONFIG <====<====<====<====<====
@@ -28,39 +29,238 @@ const version = "2.1.5";
     0: "guest",
     1: "crew",
     3: "captain",
+    guest: 0,
+    crew: 1,
+    captain: 3,
   };
-  const storage = {
-    session: new Map(),
-    persist: {
-      key: "DreddarkAPI.persist",
-      read() {
-        try {
-          return JSON.parse(localStorage.getItem(this.key)) || {};
-        } catch {
-          return {};
-        }
-      },
-      write(v) {
-        try {
-          localStorage.setItem(this.key, JSON.stringify(v));
-        } catch {}
-      },
-      get(ns, k) {
-        return this.read()?.[ns]?.[k];
-      },
-      set(ns, k, v) {
-        const d = this.read();
-        d[ns] ||= {};
-        d[ns][k] = v;
-        this.write(d);
-      },
-      del(ns, k) {
-        const d = this.read();
-        if (d?.[ns]) delete d[ns][k];
-        this.write(d);
-      },
+
+  const storageOption = {
+    defaultDatabase: "localstorage",
+    namespace: "DreddarkAPI",
+    readonly: false,
+    onError(e) {},
+    localstorage: {
+      key: "persist",
+    },
+    sessionstorage: {
+      key: "session",
+    },
+    memory: {},
+    cookie: {
+      key: "cookie",
+      path: "/",
+      maxAge: 31536000,
+      sameSite: "Lax",
+      secure: false,
+    },
+    url: {
+      key: null,
+      action: "query",
+      replaceState: true,
+    },
+    indexeddb: {
+      name: "DreddarkAPI",
+      store: "kv",
+    },
+    broadcast: {
+      channel: "DreddarkAPI",
     },
   };
+
+  const createStorage = (opt) => {
+    if (!opt) opt = storageOption;
+    if (typeof opt !== "object") return;
+    const ns = opt.namespace || storageOption.namespace;
+    const getPath = (o, p) => p.split(".").reduce((a, k) => a?.[k], o);
+    const setPath = (o, p, v) => {
+      const k = p.split(".");
+      let c = o;
+      for (let i = 0; i < k.length - 1; i++) c = c[k[i]] ||= {};
+      c[k.at(-1)] = v;
+    };
+    const delPath = (o, p) => {
+      const k = p.split(".");
+      let c = o;
+      for (let i = 0; i < k.length - 1; i++) {
+        if (!c[k[i]]) return;
+        c = c[k[i]];
+      }
+      delete c[k.at(-1)];
+    };
+    const wrapTree = (s) => ({
+      get(p) {
+        const d = s.get("__root__") || {};
+        const base = ns ? d[ns] || {} : d;
+        return getPath(base, p);
+      },
+      set(p, v) {
+        const d = s.get("__root__") || {};
+        const base = ns ? (d[ns] ||= {}) : d;
+        setPath(base, p, v);
+        s.set("__root__", d);
+      },
+      del(p) {
+        const d = s.get("__root__") || {};
+        const base = ns ? d[ns] || {} : d;
+        delPath(base, p);
+        s.set("__root__", d);
+      },
+    });
+    if (
+      opt.defaultDatabase === "localstorage" ||
+      opt.defaultDatabase === "sessionstorage"
+    ) {
+      const isSession = opt.defaultDatabase === "sessionstorage";
+      const store = isSession ? sessionStorage : localStorage;
+      const key = opt[opt.defaultDatabase].key;
+      return wrapTree({
+        get(k) {
+          try {
+            return JSON.parse(store.getItem(key))?.[k];
+          } catch {
+            return undefined;
+          }
+        },
+        set(k, v) {
+          try {
+            const d = JSON.parse(store.getItem(key)) || {};
+            d[k] = v;
+            store.setItem(key, JSON.stringify(d));
+          } catch {}
+        },
+        del(k) {
+          try {
+            const d = JSON.parse(store.getItem(key)) || {};
+            delete d[k];
+            store.setItem(key, JSON.stringify(d));
+          } catch {}
+        },
+      });
+    }
+    if (opt.defaultDatabase === "memory") {
+      const mem = {};
+      return wrapTree({
+        get(k) {
+          return mem[k];
+        },
+        set(k, v) {
+          mem[k] = v;
+        },
+        del(k) {
+          delete mem[k];
+        },
+      });
+    }
+    if (opt.defaultDatabase === "cookie") {
+      const o = opt.cookie;
+      return wrapTree({
+        get(k) {
+          return document.cookie
+            .split("; ")
+            .find((v) => v.startsWith(`${k}=`))
+            ?.split("=")[1];
+        },
+        set(k, v) {
+          document.cookie = `${k}=${v}; path=${o.path}; max-age=${o.maxAge}`;
+        },
+        del(k) {
+          document.cookie = `${k}=; path=${o.path}; max-age=0`;
+        },
+      });
+    }
+    if (opt.defaultDatabase === "url") {
+      const o = opt.url;
+      return wrapTree({
+        get(k) {
+          const u = new URL(location.href);
+          const kk = k ?? o.key;
+          if (o.action === "query") return u.searchParams.get(kk);
+          if (o.action === "hash")
+            return new URLSearchParams(u.hash.slice(1)).get(kk);
+          if (o.action === "path") return u.pathname.split("/").pop();
+        },
+        set(k, v) {
+          const u = new URL(location.href);
+          const kk = k ?? o.key;
+          if (o.action === "query") u.searchParams.set(kk, v);
+          if (o.action === "hash") {
+            const p = new URLSearchParams(u.hash.slice(1));
+            p.set(kk, v);
+            u.hash = p.toString();
+          }
+          if (o.action === "path")
+            u.pathname = `${u.pathname.replace(/\/[^/]*$/, "")}/${v}`;
+          history.replaceState(null, "", u.toString());
+        },
+        del(k) {
+          const u = new URL(location.href);
+          const kk = k ?? o.key;
+          if (o.action === "query") u.searchParams.delete(kk);
+          if (o.action === "hash") {
+            const p = new URLSearchParams(u.hash.slice(1));
+            p.delete(kk);
+            u.hash = p.toString();
+          }
+          if (o.action === "path")
+            u.pathname = u.pathname.replace(/\/[^/]*$/, "");
+          history.replaceState(null, "", u.toString());
+        },
+      });
+    }
+    if (opt.defaultDatabase === "indexeddb") {
+      const o = opt.indexeddb;
+      let dbp;
+      const open = () =>
+        (dbp ||= new Promise((r, j) => {
+          const q = indexedDB.open(o.name, 1);
+          q.onupgradeneeded = () => q.result.createObjectStore(o.store);
+          q.onsuccess = () => r(q.result);
+          q.onerror = () => j(q.error);
+        }));
+      const tx = async (m, k, v) => {
+        const db = await open();
+        return new Promise((r, j) => {
+          const t = db.transaction(o.store, m).objectStore(o.store)[m](v, k);
+          t.onsuccess = () => r(t.result);
+          t.onerror = () => j(t.error);
+        });
+      };
+      return wrapTree({
+        async get(k) {
+          return tx("get", k);
+        },
+        async set(k, v) {
+          await tx("put", k, v);
+        },
+        async del(k) {
+          await tx("delete", k);
+        },
+      });
+    }
+    if (opt.defaultDatabase === "broadcast") {
+      const c = new BroadcastChannel(opt.broadcast.channel);
+      const mem = {};
+      c.onmessage = (e) => Object.assign(mem, e.data);
+      return wrapTree({
+        get(k) {
+          return mem[k];
+        },
+        set(k, v) {
+          mem[k] = v;
+          c.postMessage({ [k]: v });
+        },
+        del(k) {
+          delete mem[k];
+          c.postMessage({ [k]: undefined });
+        },
+      });
+    }
+    throw new Error("Invalid defaultDatabase");
+  };
+
+  const storage = createStorage({
+    ...storageOption,
+  });
 
   const createEventBus = () => {
     const map = {};
@@ -162,6 +362,41 @@ const version = "2.1.5";
       if (!shipNode) return false;
       shipNode.click();
       return true;
+    },
+
+    async getShipFromLink(link) {
+      try {
+        const res = await fetch(link, {
+          headers: {
+            "User-Agent": "Mozilla/5.0",
+            Cookie: `anon_key=fZEBE7fIFigqHKHPHiAzp0SW`,
+            // dont log in or you'll get account theft ban
+            // you have been warn
+          },
+        });
+        if (!res.ok) return {};
+        const html = await res.text();
+        const ogTitleMatch = html.match(
+          /<meta\s+property=["']og:title["']\s+content=["']([^"']+)["']/i,
+        );
+        const ogImageMatch = html.match(
+          /<meta\s+property=["']og:image["']\s+content=["']([^"']+)["']/i,
+        );
+        const ogTitle = ogTitleMatch ? ogTitleMatch[1] : "";
+        const ogImage = ogImageMatch ? ogImageMatch[1] : null;
+        const shipName = ogTitle
+          .replace(/^(Invite:|Ship:)\s*/i, "")
+          .replace(/\s*[-|]\s*drednot\.io$/i, "")
+          .trim();
+        if (!shipName || shipName === "Deep Space Airships") return {};
+        return {
+          valid: true,
+          shipName,
+          shipImage: ogImage,
+        };
+      } catch {
+        return {};
+      }
     },
 
     getCurrentJoinedShip() {
@@ -392,8 +627,8 @@ const version = "2.1.5";
             const hasColon = rawText.includes(":");
             const isUser = hasUser && hasColon && !isWarning;
             const isSystem = !isUser && !isWarning;
-            const user = isUser ? (bdis[0]?.textContent || "unknown") : null;
-            const role = isUser ? (roleSpan?.textContent || "Guest") : null;
+            const user = isUser ? bdis[0]?.textContent || "unknown" : null;
+            const role = isUser ? roleSpan?.textContent || "Guest" : null;
             const base = {
               trusted: false,
               timestamp: Date.now(),
@@ -440,7 +675,8 @@ const version = "2.1.5";
               continue;
             }
             if (isUser) {
-              if (user === clientName) await new Promise(r => setTimeout(r, 1000))
+              if (user === clientName)
+                await new Promise((r) => setTimeout(r, 1000));
               const badges = badgeEls.length
                 ? [...badgeEls].map((b) => ({
                     img: b.querySelector("img")?.getAttribute("src") || null,
@@ -496,6 +732,7 @@ const version = "2.1.5";
   })();
 
   const outfit = (() => {
+    deprecate("Outfit API is no longer work. please stop using it");
     let wsReady = false;
     let wsSend = null;
     let wsMessageKey = null;
@@ -521,6 +758,7 @@ const version = "2.1.5";
       document.documentElement.appendChild(s);
     };
     const initWsHook = (messageKey) => {
+      deprecate("Outfit API is no longer work. please stop using it");
       if (!isDocumentStart()) return;
       if (wsReady) return;
       if (typeof messageKey !== "string" || !messageKey) return;
@@ -539,6 +777,7 @@ const version = "2.1.5";
         }
         return origPostMessage.call(this, data, origin, ...rest);
       };
+      console.log(true);
     };
     const getSettings = () => {
       try {
@@ -547,20 +786,23 @@ const version = "2.1.5";
         return {};
       }
     };
-    const setOutfit = (isInGame) => {
+    const setOutfit = (isInGame, outfit) => {
+      deprecate("Outfit API is no longer work. please stop using it");
+      if (!outfit || typeof outfit !== "object") return;
       if (isInGame) {
         if (!wsReady || !msgpackReady) return;
         wsSend(
           window.msgpack.encode({
             type: 7,
-            outfit: getSettings().player_appearance || {},
+            outfit,
           }),
         );
-        return;
+        return true;
       }
       const settings = getSettings();
-      settings.player_appearance ||= {};
+      settings.player_appearance = outfit;
       localStorage.setItem("dredark_user_settings", JSON.stringify(settings));
+      return true;
     };
     return {
       initWsHook,
@@ -579,6 +821,8 @@ const version = "2.1.5";
     ship,
     commands,
     observe,
+    createStorage,
+    defaultStorageOption: storageOption,
     storage,
     utils,
     use(fn) {

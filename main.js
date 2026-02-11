@@ -1,7 +1,10 @@
 // ==UserScript==
 // @name         Simple Dreddark API v2
-// @namespace    http://tampermonkey.net/
-// @version      2.1.8
+// @namespace    Simple-Dreddark-API
+// @homepageURL  https://github.com/PshsayhiXD/Simple-Dreddark-API
+// @downloadURL  https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/main/stable.min.user.js
+// @updateURL    https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/main/stable.min.user.js
+// @version      2.1.9
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
 // @match        https://drednot.io/*
@@ -11,7 +14,7 @@
 // ==/UserScript==
 
 const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-const version = "2.1.8";
+const version = "2.1.9";
 const deprecate = (r) => {
   console.warn(
     "%cDEPRECATED%c " + r,
@@ -858,7 +861,7 @@ const deprecate = (r) => {
     };
     return Object.freeze({
       fetchSchedule,
-      pvpEvent
+      pvpEvent,
     });
   })();
   const chat = (() => {
@@ -1015,6 +1018,60 @@ const deprecate = (r) => {
       started = false;
       return true;
     };
+    const waitForChat = (user, text, opts = {}) => {
+      if (typeof opts.onMatch !== "function")
+        throw new Error("waitForChat: onMatch callback is required");
+      const recallable = !!opts.recallable;
+      const timeoutSec = opts.timeout ?? 15;
+      const onMatch = opts.onMatch;
+      const onFallback =
+        typeof opts.onFallback === "function" ? opts.onFallback : null;
+      const isWildcardUser = user === "*";
+      const isWildcardText = text === "*";
+      const isFn = typeof text === "function";
+      let done = false;
+      let matchedOnce = false;
+      let timer = null;
+      let resolveFn;
+      let rejectFn;
+      const match = async (p) => {
+        if (!isWildcardUser && p.user !== user) return false;
+        if (isWildcardText) return true;
+        if (isFn) return !!(await text(p.message, p));
+        return p.message === text;
+      };
+      const handler = async (p) => {
+        if (done) return;
+        if (!(await match(p))) return;
+        matchedOnce = true;
+        onMatch(p);
+        if (!recallable) {
+          done = true;
+          cleanup();
+          resolveFn?.(p);
+        }
+      };
+      const cleanup = () => {
+        events.off("chat", handler);
+        if (timer) clearTimeout(timer);
+      };
+      if (timeoutSec !== Infinity)
+        timer = setTimeout(() => {
+          done = true;
+          cleanup();
+          if (!matchedOnce) onFallback?.();
+          rejectFn?.(new Error("waitForChat timeout"));
+        }, timeoutSec * 1000);
+      if (recallable) {
+        events.on("chat", handler);
+        return cleanup;
+      }
+      return new Promise((resolve, reject) => {
+        resolveFn = resolve;
+        rejectFn = reject;
+        events.on("chat", handler);
+      });
+    };
     return Object.freeze({
       send(msg) {
         if (!msg) return false;
@@ -1022,6 +1079,7 @@ const deprecate = (r) => {
         sendNext();
         return true;
       },
+      waitForChat,
       init,
       destroy,
     });

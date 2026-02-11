@@ -43,7 +43,7 @@ window.Dreddark
 
 ## Version
 ```js
-Dreddark.version // "2.1.7"
+Dreddark.version // "2.1.9"
 ```
 
 ## Document

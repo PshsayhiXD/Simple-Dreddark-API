@@ -15,24 +15,153 @@
 
 const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
 const version = "2.1.9";
-const deprecate = (r) => {
-  console.warn(
-    "%cDEPRECATED%c " + r,
-    "background:#ff3b3b;color:#fff;font-weight:bold;padding:2px 6px;border-radius:3px",
-    "color:inherit",
-  );
-};
 (() => {
   "use strict";
   // ====>====>====>====>====> CONFIG <====<====<====<====<====
   let defaultCommandPrefix = "?";
 
   const debug = {
-    enabled: false,
-    log(...args) {
-      if (!this.enabled) return;
-      console.log("[Dreddark]", ...args);
+    enabled: true,
+    showMeta: false,
+    _badgeStyle(bg) {
+      return [
+        "background:" + bg,
+        "color:#000",
+        "font-weight:700",
+        "padding:2px 8px",
+        "border-radius:6px",
+        "font-size:12px"
+      ].join(";");
     },
+    _moduleStyle() {
+      return [
+        "background:#cdeccf",
+        "color:#004400",
+        "padding:2px 6px",
+        "border-radius:6px",
+        "font-size:12px",
+        "margin-left:6px"
+      ].join(";");
+    },
+    _metaStyle() {
+      return [
+        "background:#eee",
+        "color:#666",
+        "padding:1px 6px",
+        "border-radius:6px",
+        "font-size:11px",
+        "margin-left:8px"
+      ].join(";");
+    },
+    _getSourceFromStack() {
+      const err = new Error();
+      const stack = err.stack || "";
+      const lines = stack.split("\n").map((l) => l.trim());
+      for (const l of lines) {
+        if (l.includes("debug.") || l.includes("_getSourceFromStack")) continue;
+        const m = l.match(/(?:https?:\/\/.*?\/)?([^\/\s]+?\.\w+):(\d+):\d+/);
+        if (m) return `${m[1]}:${m[2]}`;
+        const m2 = l.match(/at\s+(\/.*?\.\w+):(\d+):\d+/);
+        if (m2) return `${m2[1].split("/").pop()}:${m2[2]}`;
+      }
+      return null;
+    },
+    _print(level, moduleName, args, forcedSource = null) {
+      if (!this.enabled) return;
+      const badgeBg =
+      level === "LOG" ? "linear-gradient(90deg,#d7fff0,#b8f3d1)" :
+      level === "WARN" ? "linear-gradient(90deg,#fff3d6,#ffdd9a)" :
+      "linear-gradient(90deg,#ffe7ea,#ffc6cc)";
+      const cssBadge = this._badgeStyle(badgeBg);
+      const cssModule = this._moduleStyle();
+      const cssMeta = this._metaStyle();
+      const source = forcedSource || this._getSourceFromStack() || "console";
+      const time = new Date().toISOString();
+      if (moduleName && this.showMeta) {
+        console.log(
+          "%c DREDDARK %c " + moduleName + " %c " + source + " %c " + time,
+          cssBadge,
+          cssModule,
+          cssMeta,
+          cssMeta,
+          ...args
+          );
+        return;
+      }
+      if (moduleName && !this.showMeta) {
+        console.log(
+          "%c DREDDARK %c " + moduleName,
+          cssBadge,
+          cssModule,
+          ...args
+          );
+        return;
+      }
+      if (!moduleName && this.showMeta) {
+        console.log(
+          "%c DREDDARK %c " + source + " %c " + time,
+          cssBadge,
+          cssMeta,
+          cssMeta,
+          ...args
+          );
+        return;
+      }
+      console.log("%c DREDDARK", cssBadge, ...args);
+    },
+    group(moduleName, label) {
+      if (!this.enabled) return;
+      const name = typeof moduleName === "string" ? moduleName : null;
+      const text = name ? label : moduleName;
+      const css = this._badgeStyle("linear-gradient(90deg,#d7fff0,#b8f3d1)");
+      if (this.useGroups) {
+        if (name) console.group("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
+        else console.group("%c DREDDARK %c " + text, css, this._metaStyle());
+      } else {
+        if (name) console.log("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
+        else console.log("%c DREDDARK %c " + text, css, this._metaStyle());
+      }
+    },
+    groupCollapsed(moduleName, label) {
+      if (!this.enabled) return;
+      const name = typeof moduleName === "string" ? moduleName : null;
+      const text = name ? label : moduleName;
+      const css = this._badgeStyle("linear-gradient(90deg,#d7fff0,#b8f3d1)");
+      if (this.useGroups) {
+        if (name) console.groupCollapsed("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
+        else console.groupCollapsed("%c DREDDARK %c " + text, css, this._metaStyle());
+      } else {
+        if (name) console.log("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
+        else console.log("%c DREDDARK %c " + text, css, this._metaStyle());
+      }
+    },
+    groupEnd() {
+      if (!this.enabled) return;
+      if (this.useGroups) console.groupEnd();
+    },
+    log(moduleName, ...rest) {
+      if (typeof moduleName !== "string") return this._print("LOG", null, [moduleName, ...rest]);
+      this._print("LOG", moduleName, rest);
+    },
+    warn(moduleName, ...rest) {
+      if (typeof moduleName !== "string") return this._print("WARN", null, [moduleName, ...rest]);
+      this._print("WARN", moduleName, rest);
+    },
+    error(moduleName, ...rest) {
+      if (typeof moduleName !== "string") return this._print("ERR", null, [moduleName, ...rest]);
+      this._print("ERR", moduleName, rest);
+    },
+    module(name) {
+      return {
+        log: (...a) => this.log(name, ...a),
+        warn: (...a) => this.warn(name, ...a),
+        error: (...a) => this.error(name, ...a)
+      };
+    },
+    banner(title = "DREDDARK INITIALIZED") {
+      if (!this.enabled) return;
+      console.log("%c " + title + " ", this._badgeStyle("linear-gradient(90deg,#ffdede,#ffe8c8)"));
+    }
   };
   const rankValue = {
     0: "guest",
@@ -78,7 +207,7 @@ const deprecate = (r) => {
         };
         const timer = setTimeout(() => {
           cleanup();
-          reject(new Error(`observe.wait timeout: ${sel}`));
+          reject(new Error(`wait timeout: ${sel}`));
         }, timeout);
         obs.observe(document, {
           childList: true,
@@ -985,14 +1114,14 @@ const deprecate = (r) => {
       const clientName = await client.getClientUsername();
       if (started) return false;
       started = true;
-      const target = await observe.wait("#chat-content");
+      const target = await dom.wait("#chat-content");
       chatObserver = new MutationObserver(async (muts) => {
         for (const m of muts) {
           for (const p of m.addedNodes) {
             if (!(p instanceof HTMLElement)) continue;
             const b = p.querySelector("b");
             if (!b) {
-              debug.log("skip: no <b>", p);
+              debug.log("observer", "no <b>", p);
               continue;
             }
             const badgeEls = b.querySelectorAll(".user-badge-small");
@@ -1025,14 +1154,14 @@ const deprecate = (r) => {
               isUser,
               isSystem,
             };
-            debug.log("parsed", {
+            debug.log("observer", "parsed: ", {
               userMessage,
               rawText,
               isUser,
               isSystem
             });
             if (isWarning) {
-              debug.log("emit warning", base);
+              debug.log("observer", "emit warning", base);
               events.emit("warning", base);
               continue;
             }
@@ -1058,7 +1187,7 @@ const deprecate = (r) => {
               const isOpen =
                 /\bNOW\b/i.test(rawText) ||
                 /\b(open|opened|is open)\b/i.test(rawText);
-              debug.log("emit mission", { mission, location, isOpen, rawText });
+              debug.log("observer", "emit mission", { mission, location, isOpen, rawText });
               if (mission) {
                 events.emit("mission", {
                   ...base,
@@ -1066,7 +1195,7 @@ const deprecate = (r) => {
                   location,
                   isOpen
                 });
-              } else debug.log("skip emit mission: no mission parsed", rawText);
+              } else debug.log("observer", "skip emit mission: no mission parsed", rawText);
               continue;
             }
             if (
@@ -1078,7 +1207,7 @@ const deprecate = (r) => {
                 const action = rawText.includes("was promoted to")
                       ? "promote"
                       : "demote";
-                debug.log("emit roleChange", {
+                debug.log("observer", "emit roleChange", {
                   action,
                   targetUser: bdis[0].textContent,
                   byUser: bdis[1].textContent,
@@ -1099,10 +1228,10 @@ const deprecate = (r) => {
                 await new Promise((r) => setTimeout(r, 1000));
               const message = userMessage;
               if (!message) {
-                debug.log("skip empty message", rawText);
+                debug.log("observer", "skip empty message", rawText);
                 continue;
               }
-              debug.log("emit chat", {
+              debug.log("observer", "emit chat", {
                 user,
                 role,
                 message
@@ -1118,7 +1247,7 @@ const deprecate = (r) => {
             }
             if (isSystem && rawText.includes("joined the ship.")) {
               const user = bdis[0]?.textContent || "unknown";
-              debug.log("emit shipJoin", user);
+              debug.log("observer", "emit shipJoin", user);
               events.emit("shipJoin", {
                 ...base,
                 user,
@@ -1129,7 +1258,7 @@ const deprecate = (r) => {
             }
             if (isSystem && rawText.includes("left the ship.")) {
               const user = bdis[0]?.textContent || "unknown";
-              debug.log("emit shipLeave", user);
+              debug.log("observer", "emit shipLeave", user);
               events.emit("shipLeave", {
                 ...base,
                 user,
@@ -1138,7 +1267,7 @@ const deprecate = (r) => {
               });
               continue;
             }
-            debug.log("unhandled line", rawText);
+            debug.log("observer", "unhandled line", rawText);
           }
         }
       });
@@ -1214,6 +1343,51 @@ const deprecate = (r) => {
         const msg = args.map(v => String(v)).join(" ");
         queue.push(msg);
         sendNext();
+        return true;
+      },
+      append(...args) {
+        if (!args.length) return false;
+        const target = dom.wait("#chat-content");
+        if (!target) return false;
+        const flat = args.flat(Infinity);
+        const items = flat
+          .filter(v => v && typeof v === "object" && typeof v.text === "string")
+          .map(v => ({
+            user: v.user ?? "unknown",
+            text: v.text,
+            role: v.role ?? "Guest",
+            badge: v.badge ?? null
+          }));
+        if (!items.length) return false;
+        for (const it of items) {
+          const row = document.createElement("div");
+          const b = document.createElement("b");
+          const bdi = document.createElement("bdi");
+          bdi.textContent = it.user;
+          b.appendChild(bdi);
+          if (it.badge) {
+            const badge = document.createElement("span");
+            badge.className = "user-badge-small";
+            if (it.badge.image) {
+              const img = document.createElement("img");
+              img.src = it.badge.image;
+             badge.appendChild(img);
+            }
+            if (it.badge.tooltip) {
+              const tip = document.createElement("span");
+              tip.className = "tooltip";
+              tip.textContent = it.badge.tooltip;
+              badge.appendChild(tip);
+            }
+            b.appendChild(badge);
+          }
+          const role = document.createElement("span");
+          role.textContent = it.role;
+          b.appendChild(role);
+          row.appendChild(b);
+          row.appendChild(document.createTextNode(": " + it.text));
+          target.appendChild(row);
+        }
         return true;
       },
       waitForChat,
@@ -1326,4 +1500,9 @@ const deprecate = (r) => {
   };
 
   root.Dreddark = Dreddark;
+  console.log(
+    "%cBOOT SUCCESSFUL;%c " + new Date().toISOString(),
+    "color: #00ff88; font-weight: bold;",
+    "color: #888;"
+  );
 })();

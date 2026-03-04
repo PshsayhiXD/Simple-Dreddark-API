@@ -151,6 +151,50 @@ const version = "2.1.9";
       if (typeof moduleName !== "string") return this._print("ERR", null, [moduleName, ...rest]);
       this._print("ERR", moduleName, rest);
     },
+    force(level, moduleName, ...rest) {
+      const prev = this.enabled;
+      this.enabled = true;
+      this._print(level, typeof moduleName === "string" ? moduleName : null,
+        typeof moduleName === "string" ? rest : [moduleName, ...rest]
+        );
+      this.enabled = prev;
+    },
+    forceLog(moduleName, ...rest) {
+      this.force("LOG", moduleName, ...rest);
+    },
+    forceWarn(moduleName, ...rest) {
+      this.force("WARN", moduleName, ...rest);
+    },
+    forceError(moduleName, ...rest) {
+      this.force("ERR", moduleName, ...rest);
+    },
+    forceGroup(moduleName, label) {
+      const prev = this.enabled;
+      this.enabled = true;
+      try {
+        this.group(moduleName, label);
+      } finally {
+        this.enabled = prev;
+      }
+    },
+    forceGroupCollapsed(moduleName, label) {
+      const prev = this.enabled;
+      this.enabled = true;
+      try {
+        this.groupCollapsed(moduleName, label);
+      } finally {
+        this.enabled = prev;
+      }
+    },
+    forceGroupEnd() {
+      const prev = this.enabled;
+      this.enabled = true;
+      try {
+        this.groupEnd();
+      } finally {
+        this.enabled = prev;
+      }
+    },
     module(name) {
       return {
         log: (...a) => this.log(name, ...a),
@@ -1396,7 +1440,7 @@ const version = "2.1.9";
     });
   })();
   const outfit = (() => {
-    deprecate("Outfit API are no longer work. please stop using it");
+    debug.forceWarn("outfit", "DEPRECATED;", "Outfit API no longer works. Stop using it.");
     let wsReady = false;
     let wsSend = null;
     let wsMessageKey = null;
@@ -1422,7 +1466,7 @@ const version = "2.1.9";
       document.documentElement.appendChild(s);
     };
     const initWsHook = (messageKey) => {
-      deprecate("Outfit API are no longer work. please stop using it");
+      debug.forceWarn("outfit", "DEPRECATED;", "Outfit API no longer works. Stop using it.");
       if (!isDocumentStart()) return;
       if (wsReady) return;
       if (typeof messageKey !== "string" || !messageKey) return;
@@ -1443,7 +1487,7 @@ const version = "2.1.9";
         }
         return origPostMessage.call(this, data, origin, ...rest);
       };
-      console.log(true);
+      return true;
     };
     const getSettings = () => {
       try {
@@ -1500,9 +1544,7 @@ const version = "2.1.9";
   };
 
   root.Dreddark = Dreddark;
-  console.log(
-    "%cBOOT SUCCESSFUL;%c " + new Date().toISOString(),
-    "color: #00ff88; font-weight: bold;",
-    "color: #888;"
-  );
+  debug.forceGroup("BOOT", "System Startup");
+  debug.forceLog("BOOT", "SUCCESSFUL", { time: new Date().toISOString() });
+  debug.forceGroupEnd();
 })();

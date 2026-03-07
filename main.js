@@ -23,40 +23,52 @@ const version = "2.1.9";
   const debug = {
     enabled: true,
     showMeta: false,
-    _badgeStyle(bg) {
+    useGroups: true,
+    _badgeStyle() {
       return [
-        "background:" + bg,
-        "color:#000",
+        "background:#1a73e8",
+        "color:#fff",
         "font-weight:700",
-        "padding:2px 8px",
-        "border-radius:6px",
-        "font-size:12px"
+        "padding:2px 10px",
+        "border-radius:999px",
+        "font-size:11px",
+        "font-family:Roboto,Arial,sans-serif",
+        "letter-spacing:.4px",
+        "display:inline-block"
       ].join(";");
     },
-    _moduleStyle() {
+    _moduleStyle(level) {
+      const bg = level === "LOG" ? "#e8f0fe" : level === "WARN" ? "#fef7e0" : "#fce8e6";
+      const fg = level === "LOG" ? "#1967d2" : level === "WARN" ? "#b06000" : "#c5221f";
       return [
-        "background:#cdeccf",
-        "color:#004400",
-        "padding:2px 6px",
-        "border-radius:6px",
-        "font-size:12px",
-        "margin-left:6px"
+        "background:" + bg,
+        "color:" + fg,
+        "padding:2px 9px",
+        "border-radius:999px",
+        "font-size:11px",
+        "font-family:Roboto,Arial,sans-serif",
+        "font-weight:600",
+        "letter-spacing:.2px",
+        "margin-left:4px",
+        "display:inline-block"
       ].join(";");
     },
     _metaStyle() {
       return [
-        "background:#eee",
-        "color:#666",
-        "padding:1px 6px",
-        "border-radius:6px",
-        "font-size:11px",
-        "margin-left:8px"
+        "background:#f1f3f4",
+        "color:#5f6368",
+        "padding:2px 8px",
+        "border-radius:999px",
+        "font-size:10px",
+        "font-family:Roboto Mono,monospace",
+        "margin-left:6px",
+        "display:inline-block"
       ].join(";");
     },
     _getSourceFromStack() {
       const err = new Error();
       const stack = err.stack || "";
-      const lines = stack.split("\n").map((l) => l.trim());
+      const lines = stack.split("\n").map(l => l.trim());
       for (const l of lines) {
         if (l.includes("debug.") || l.includes("_getSourceFromStack")) continue;
         const m = l.match(/(?:https?:\/\/.*?\/)?([^\/\s]+?\.\w+):(\d+):\d+/);
@@ -68,143 +80,85 @@ const version = "2.1.9";
     },
     _print(level, moduleName, args, forcedSource = null) {
       if (!this.enabled) return;
-      const badgeBg =
-      level === "LOG" ? "linear-gradient(90deg,#d7fff0,#b8f3d1)" :
-      level === "WARN" ? "linear-gradient(90deg,#fff3d6,#ffdd9a)" :
-      "linear-gradient(90deg,#ffe7ea,#ffc6cc)";
-      const cssBadge = this._badgeStyle(badgeBg);
-      const cssModule = this._moduleStyle();
-      const cssMeta = this._metaStyle();
+      const name = moduleName ? moduleName.trim() : null;
+      const badgeCss = this._badgeStyle();
+      const moduleCss = name ? this._moduleStyle(level) : null;
+      const metaCss = this._metaStyle();
       const source = forcedSource || this._getSourceFromStack() || "console";
       const time = new Date().toISOString();
-      if (moduleName && this.showMeta) {
-        console.log(
-          "%c DREDDARK %c " + moduleName + " %c " + source + " %c " + time,
-          cssBadge,
-          cssModule,
-          cssMeta,
-          cssMeta,
-          ...args
-          );
-        return;
-      }
-      if (moduleName && !this.showMeta) {
-        console.log(
-          "%c DREDDARK %c " + moduleName,
-          cssBadge,
-          cssModule,
-          ...args
-          );
-        return;
-      }
-      if (!moduleName && this.showMeta) {
-        console.log(
-          "%c DREDDARK %c " + source + " %c " + time,
-          cssBadge,
-          cssMeta,
-          cssMeta,
-          ...args
-          );
-        return;
-      }
-      console.log("%c DREDDARK", cssBadge, ...args);
+      const parts = ["%c DREDDARK"];
+      const styles = [badgeCss];
+      if (name) { parts.push("%c " + name); styles.push(moduleCss); }
+      if (this.showMeta) { parts.push("%c " + source); parts.push("%c " + time); styles.push(metaCss, metaCss); }
+      const fmt = parts.join(" ");
+      const fn = level === "WARN" ? root.console.warn : level === "ERR" ? root.console.error : root.console.log;
+      fn(fmt, ...styles, ...args);
     },
     group(moduleName, label) {
       if (!this.enabled) return;
-      const name = typeof moduleName === "string" ? moduleName : null;
+      const name = typeof moduleName === "string" ? moduleName.trim() : null;
       const text = name ? label : moduleName;
-      const css = this._badgeStyle("linear-gradient(90deg,#d7fff0,#b8f3d1)");
-      if (this.useGroups) {
-        if (name) console.group("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
-        else console.group("%c DREDDARK %c " + text, css, this._metaStyle());
-      } else {
-        if (name) console.log("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
-        else console.log("%c DREDDARK %c " + text, css, this._metaStyle());
-      }
+      const badgeCss = this._badgeStyle();
+      const fmt = name
+        ? "%c DREDDARK %c " + name + " %c " + text
+        : "%c DREDDARK %c " + text;
+      const styles = name
+        ? [badgeCss, this._moduleStyle("LOG"), this._metaStyle()]
+        : [badgeCss, this._metaStyle()];
+      this.useGroups ? root.console.group(fmt, ...styles) : root.console.log(fmt, ...styles);
     },
     groupCollapsed(moduleName, label) {
       if (!this.enabled) return;
-      const name = typeof moduleName === "string" ? moduleName : null;
+      const name = typeof moduleName === "string" ? moduleName.trim() : null;
       const text = name ? label : moduleName;
-      const css = this._badgeStyle("linear-gradient(90deg,#d7fff0,#b8f3d1)");
-      if (this.useGroups) {
-        if (name) console.groupCollapsed("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
-        else console.groupCollapsed("%c DREDDARK %c " + text, css, this._metaStyle());
-      } else {
-        if (name) console.log("%c DREDDARK %c " + name + " %c " + text, css, this._moduleStyle(), this._metaStyle());
-        else console.log("%c DREDDARK %c " + text, css, this._metaStyle());
-      }
+      const badgeCss = this._badgeStyle();
+      const fmt = name
+        ? "%c DREDDARK %c " + name + " %c " + text
+        : "%c DREDDARK %c " + text;
+      const styles = name
+        ? [badgeCss, this._moduleStyle("LOG"), this._metaStyle()]
+        : [badgeCss, this._metaStyle()];
+      this.useGroups ? root.console.groupCollapsed(fmt, ...styles) : root.console.log(fmt, ...styles);
     },
-    groupEnd() {
-      if (!this.enabled) return;
-      if (this.useGroups) console.groupEnd();
-    },
-    log(moduleName, ...rest) {
-      if (typeof moduleName !== "string") return this._print("LOG", null, [moduleName, ...rest]);
-      this._print("LOG", moduleName, rest);
-    },
-    warn(moduleName, ...rest) {
-      if (typeof moduleName !== "string") return this._print("WARN", null, [moduleName, ...rest]);
-      this._print("WARN", moduleName, rest);
-    },
-    error(moduleName, ...rest) {
-      if (typeof moduleName !== "string") return this._print("ERR", null, [moduleName, ...rest]);
-      this._print("ERR", moduleName, rest);
-    },
+    groupEnd() { if (!this.enabled) return; if (this.useGroups) root.console.groupEnd(); },
+    log(moduleName, ...rest)   { if (typeof moduleName !== "string") return this._print("LOG",  null, [moduleName, ...rest]); this._print("LOG",  moduleName.trim(), rest); },
+    warn(moduleName, ...rest)  { if (typeof moduleName !== "string") return this._print("WARN", null, [moduleName, ...rest]); this._print("WARN", moduleName.trim(), rest); },
+    error(moduleName, ...rest) { if (typeof moduleName !== "string") return this._print("ERR",  null, [moduleName, ...rest]); this._print("ERR",  moduleName.trim(), rest); },
     force(level, moduleName, ...rest) {
-      const prev = this.enabled;
-      this.enabled = true;
-      this._print(level, typeof moduleName === "string" ? moduleName : null,
+      const prev = this.enabled; this.enabled = true;
+      this._print(
+        level,
+        typeof moduleName === "string" ? moduleName.trim() : null,
         typeof moduleName === "string" ? rest : [moduleName, ...rest]
         );
       this.enabled = prev;
     },
-    forceLog(moduleName, ...rest) {
-      this.force("LOG", moduleName, ...rest);
-    },
-    forceWarn(moduleName, ...rest) {
-      this.force("WARN", moduleName, ...rest);
-    },
-    forceError(moduleName, ...rest) {
-      this.force("ERR", moduleName, ...rest);
-    },
+    forceLog(moduleName, ...rest)   { this.force("LOG",  moduleName, ...rest); },
+    forceWarn(moduleName, ...rest)  { this.force("WARN", moduleName, ...rest); },
+    forceError(moduleName, ...rest) { this.force("ERR",  moduleName, ...rest); },
     forceGroup(moduleName, label) {
-      const prev = this.enabled;
-      this.enabled = true;
-      try {
-        this.group(moduleName, label);
-      } finally {
-        this.enabled = prev;
-      }
+      const prev = this.enabled; this.enabled = true;
+      try { this.group(moduleName, label); } finally { this.enabled = prev; }
     },
     forceGroupCollapsed(moduleName, label) {
-      const prev = this.enabled;
-      this.enabled = true;
-      try {
-        this.groupCollapsed(moduleName, label);
-      } finally {
-        this.enabled = prev;
-      }
+      const prev = this.enabled; this.enabled = true;
+      try { this.groupCollapsed(moduleName, label); } finally { this.enabled = prev; }
     },
     forceGroupEnd() {
-      const prev = this.enabled;
-      this.enabled = true;
-      try {
-        this.groupEnd();
-      } finally {
-        this.enabled = prev;
-      }
+      const prev = this.enabled; this.enabled = true;
+      try { this.groupEnd(); } finally { this.enabled = prev; }
     },
     module(name) {
+      const n = name.trim();
       return {
-        log: (...a) => this.log(name, ...a),
-        warn: (...a) => this.warn(name, ...a),
-        error: (...a) => this.error(name, ...a)
+        log:   (...a) => this.log(n, ...a),
+        warn:  (...a) => this.warn(n, ...a),
+        error: (...a) => this.error(n, ...a)
       };
     },
     banner(title = "DREDDARK INITIALIZED") {
       if (!this.enabled) return;
-      console.log("%c " + title + " ", this._badgeStyle("linear-gradient(90deg,#ffdede,#ffe8c8)"));
+      root.console.log("%c " + title + " ", this._badgeStyle());
     }
   };
   const rankValue = {
@@ -226,7 +180,7 @@ const version = "2.1.9";
         (map[type] || []).forEach((fn) => {
           try {
             fn(payload);
-          } catch {}
+          } catch (e) { debug.error("event", "event handler error", e); }
         });
       },
     });
@@ -547,7 +501,7 @@ const version = "2.1.9";
           }))
           .sort((a, b) => b.player_count - a.player_count);
       } catch (error) {
-        console.error("Error processing ship data:", error.messasge);
+        debug.error("parseShipData", "Error processing ship data:", error.message);
         return [];
       }
     };
@@ -593,6 +547,421 @@ const version = "2.1.9";
       storage.session.delete("ship.current");
     };
 
+    // == ! BETA ! ==
+    const logs = (() => {
+      debug.forceWarn("ship.logs", "BETA;", "ship.logs are in beta phase, expect bug. use at your own risk !");
+      const AUTO_LEARN_THRESHOLD = 3;
+      const MAX_ENTRIES = 2000;
+
+      let logEntries = [];
+      let hashes = new Set();
+      let rules = [];
+      let unknown = {};
+
+      const events = {
+        _listeners: {},
+        on(evt, fn) {
+          if (!this._listeners[evt]) this._listeners[evt] = [];
+          this._listeners[evt].push(fn);
+          return () => this.off(evt, fn);
+        },
+        off(evt, fn) {
+          if (!this._listeners[evt]) return;
+          this._listeners[evt] = this._listeners[evt].filter(h => h !== fn);
+        },
+        emit(evt, data) {
+          const arr = (this._listeners[evt] || []).slice();
+          for (let i = 0; i < arr.length; i++) {
+            try { arr[i](data); } catch (e) { debug.error("events", "event handler error", e); }
+          }
+        }
+      };
+
+      const validateCallback = (fn, name) => {
+        if (typeof fn !== "function") throw new TypeError(`${name || "callback"} must be a function, got ${typeof fn}`);
+        return fn;
+      };
+
+      const validateString = (str, name, required = true) => {
+        if (required && (str === null || str === undefined)) throw new Error(`${name} is required`);
+        if (str !== null && str !== undefined && typeof str !== "string") throw new TypeError(`${name} must be a string, got ${typeof str}`);
+        return str;
+      };
+
+      const validateRegex = (regex, name) => {
+        if (!regex) throw new Error(`${name} is required`);
+        if (typeof regex === "string") {
+          try { return new RegExp(regex, "i"); } catch (e) { throw new Error(`${name} regex is invalid: ${e.message}`); }
+        }
+        if (regex instanceof RegExp) return regex;
+        throw new TypeError(`${name} must be a RegExp or string, got ${typeof regex}`);
+      };
+
+      const validateRule = (rule, name = "rule") => {
+        if (!rule || typeof rule !== "object") throw new TypeError(`${name} must be an object, got ${typeof rule}`);
+        if (!rule.name || typeof rule.name !== "string") throw new Error(`${name}.name must be a non-empty string`);
+        if (rule.name.length > 100) throw new Error(`${name}.name too long (max 100 chars)`);
+        validateRegex(rule.regex, `${name}.regex`);
+        if (rule.mapper && typeof rule.mapper !== "function") throw new TypeError(`${name}.mapper must be a function or undefined`);
+        return rule;
+      };
+
+      const hash = (s) => {
+        let h = 5381;
+        for (let i = 0; i < s.length; i++) h = (h * 33) ^ s.charCodeAt(i);
+          return (h >>> 0).toString(16);
+      };
+
+      const escapeRegex = (s) => {
+        return (s || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      };
+
+      const isTimestampOnly = (txt) => {
+        if (!txt) return false;
+        const t = txt.trim();
+        if (/^\d{1,2}:\d{2}:\d{2}\s+\d{1,2}\/\d{1,2}\/\d{4}$/.test(t)) return true;
+        if (/^:?\s*\d+\s*$/.test(t)) return true;
+        if (/^\d+$/.test(t)) return true;
+        return false;
+      };
+
+      const defaultRules = [
+        { name: "used_on",         regex: /^\s*used\s+(.+?)\s+on\s+(.+?)\.?$/i,                       mapper: (m) => ({ action: "used", method: m[1].trim(), target: m[2].trim() }) },
+        { name: "used_item",       regex: /^\s*used\s+(.+?)\.?$/i,                                     mapper: (m) => ({ action: "used", target: m[1].trim() }) },
+        { name: "placed",          regex: /^\s*(?:placed|placed a|placed an)\s+(.+?)\.?$/i,            mapper: (m) => ({ action: "placed", target: m[1].trim() }) },
+        { name: "started_using",   regex: /^\s*(?:started using|started)\s+(.+?)\.?$/i,                mapper: (m) => ({ action: "started", target: m[1].trim() }) },
+        { name: "set_destination", regex: /set the destination zone to:\s*(.+?)\.?$/i,                 mapper: (m) => ({ action: "set_destination", target: m[1].trim() }) },
+        { name: "teleport",        regex: /teleported the ship to\s*(.+?)\.?$/i,                       mapper: (m) => ({ action: "teleport", target: m[1].trim() }) },
+        { name: "renamed_ship",    regex: /^\s*renamed\s+ship\s+to\s+"?(.+?)"?\.?$/i,                 mapper: (m) => ({ action: "renamed", target: m[1].trim() }) },
+        { name: "edited_motd",     regex: /^\s*edited\s+the\s+ship['']s\s+MOTD\.?$/i,                 mapper: (m) => ({ action: "edited_motd", target: "MOTD" }) },
+        { name: "demoted",         regex: /^\s*demoted\s+(.+?)\s+to\s+(.+?)\.?$/i,                    mapper: (m) => ({ action: "demoted", target: m[1].trim(), method: m[2].trim() }) },
+        { name: "promoted",        regex: /^\s*promoted\s+(.+?)\s+to\s+(.+?)\.?$/i,                   mapper: (m) => ({ action: "promoted", target: m[1].trim(), method: m[2].trim() }) },
+        { name: "banned",          regex: /^\s*banned\s+(.+?)\.?$/i,                                   mapper: (m) => ({ action: "banned", target: m[1].trim() }) },
+        { name: "kicked",          regex: /^\s*kicked\s+(.+?)\.?$/i,                                   mapper: (m) => ({ action: "kicked", target: m[1].trim() }) },
+        { name: "emergency_warp",  regex: /^\s*(cancelled|initiated)\s+emergency\s+warp\.?$/i,        mapper: (m) => ({ action: m[1].toLowerCase(), target: "emergency warp" }) },
+        { name: "ship_verb",       regex: /^\s*(joined|left|loaded|saved|unloaded)\s+(?:a\s+|an\s+|the\s+)?(.+?)\.?$/i, mapper: (m) => ({ action: m[1].toLowerCase(), target: m[2].trim() }) },
+        { name: "joined",          regex: /^\s*joined(?:\s+(.+?))?\.?$/i,                             mapper: (m) => ({ action: "joined", target: (m[1] || "").trim() || null }) },
+        { name: "left",            regex: /^\s*left(?:\s+(.+?))?\.?$/i,                                mapper: (m) => ({ action: "left", target: (m[1] || "").trim() || null }) },
+        { name: "simple_verb",     regex: /^\s*([a-zA-Z]+)\b(.*)$/i,                                   mapper: (m) => ({ action: m[1].toLowerCase(), target: (m[2] || "").trim() || null }) }
+      ];
+
+      rules = defaultRules.map(r => ({ ...r }));
+
+      const parseActionDetails = (text) => {
+        const raw = (text || "").trim().replace(/\s+\.$/, "");
+        if (!raw) return { matchName: null, parsed: { action: null, method: null, target: null, raw } };
+        for (let i = 0; i < rules.length; i++) {
+          const r = rules[i];
+          const m = raw.match(r.regex);
+          if (m) {
+            try {
+              const out = r.mapper(m);
+              return { matchName: r.name, parsed: { action: out.action || null, method: out.method || null, target: out.target || null, raw } };
+            } catch (e) {
+              debug.warn("logs", "rule mapper error", r.name, e);
+              continue;
+            }
+          }
+        }
+        return { matchName: null, parsed: { action: raw, method: null, target: null, raw } };
+      };
+
+      const extractActionText = (p, role, actor) => {
+        const clone = p.cloneNode(true);
+        clone.querySelectorAll(".log-count,img,b,i").forEach(n => n.remove());
+        let txt = clone.innerText.replace(/\u00A0/g, " ").trim();
+        if (role && actor) {
+          const pre = new RegExp("^\\s*\\[?\\s*" + escapeRegex(role) + "\\s*\\]?\\s*" + escapeRegex(actor) + "\\s*", "i");
+          txt = txt.replace(pre, "").trim();
+        } else if (actor) {
+          const pre = new RegExp("^\\s*\\[?\\s*" + escapeRegex(actor) + "\\s*\\]?\\s*", "i");
+          txt = txt.replace(pre, "").trim();
+        }
+        txt = txt.replace(/^\s*\[[^\]]*\]\s*\S+\s+/, "").trim();
+        const italic = p.querySelector("i");
+        if (!txt && italic) txt = italic.innerText.trim();
+        return txt;
+      };
+
+      const parseParagraph = (p) => {
+        try {
+          const rawHtml = p.innerHTML.trim();
+          const rawText = p.innerText.replace(/\u00A0/g, " ").trim();
+          const countEl = p.querySelector(".log-count");
+          const imgEl = p.querySelector("img");
+          const roleSpan = p.querySelector("b > span");
+          const actorBdi = p.querySelector("b bdi, bdi");
+          const italic = p.querySelector("i");
+          const count = countEl ? countEl.innerText.trim() : "";
+          const img = imgEl ? imgEl.getAttribute("src") : "";
+          const role = roleSpan ? roleSpan.innerText.trim() : null;
+          const actor = actorBdi ? actorBdi.innerText.trim() : null;
+          const actionText = extractActionText(p, role, actor);
+          const isTimestamp = isTimestampOnly(actionText);
+          let timeIso = null;
+          if (italic) {
+            const t = italic.innerText.trim();
+            const parsed = new Date(t);
+            if (!isNaN(parsed.valueOf())) timeIso = parsed.toISOString();
+          }
+          const { matchName, parsed } = parseActionDetails(actionText);
+          if ((!matchName || matchName === "simple_verb") && !isTimestamp) {
+            unknown[parsed.raw] = (unknown[parsed.raw] || 0) + 1;
+            if (unknown[parsed.raw] >= AUTO_LEARN_THRESHOLD) {
+              const first = (parsed.raw || "").trim().split(/\s+/)[0] || null;
+              if (first) {
+                const verb = first.toLowerCase();
+                const ruleName = "auto_" + verb + "_" + hash(parsed.raw).slice(0, 6);
+                const regex = new RegExp("^\\s*" + escapeRegex(verb) + "(?:\\s+(.+))?\\s*\\.?$", "i");
+                rules.push({ name: ruleName, regex, mapper: (m) => ({ action: verb, target: m[1] ? m[1].trim() : null }) });
+                unknown[parsed.raw] = 0;
+                events.emit("learned:rule", { ruleName, verb, example: parsed.raw });
+              }
+            }
+          }
+          const idSeed = rawHtml + "|" + rawText;
+          const id = hash(idSeed);
+          return {
+            id, count, img, role, actor,
+            action: parsed.action, method: parsed.method || null, target: parsed.target || null,
+            matchRule: matchName, actionRaw: parsed.raw, timeRaw: italic ? italic.innerText.trim() : null, timeIso,
+            rawText, rawHtml, capturedAt: new Date().toISOString(), isTimestamp
+          };
+        } catch (e) {
+          debug.error("logs", "parseParagraph error", e);
+          return null;
+        }
+      };
+
+      const appendLogs = (items) => {
+        const appended = [];
+        for (let i = 0; i < items.length; i++) {
+          const parsed = items[i];
+          if (!parsed || parsed.isTimestamp) continue;
+          if (!hashes.has(parsed.id)) {
+            logEntries.push(parsed);
+            hashes.add(parsed.id);
+            appended.push(parsed);
+            events.emit("log", parsed);
+            if (parsed.action) events.emit("log:verb:" + parsed.action, parsed);
+            if (parsed.method) events.emit("log:method:" + parsed.method, parsed);
+            if (parsed.matchRule) events.emit("log:match:" + parsed.matchRule, parsed);
+            events.emit("log:action", { action: parsed.action, method: parsed.method, target: parsed.target, user: parsed.actor, timestamp: parsed.timeIso || parsed.capturedAt, raw: parsed.actionRaw });
+          }
+        }
+        if (appended.length) {
+          if (logEntries.length > MAX_ENTRIES) logEntries = logEntries.slice(logEntries.length - MAX_ENTRIES);
+          window.dispatchEvent(new CustomEvent("drednotActionTrainerNewLogs", { detail: { newCount: appended.length, entries: appended } }));
+        }
+        return appended;
+      };
+
+      const processNode = (node) => {
+        if (!node) return;
+        const pEls = [];
+        if (node.nodeType === Node.ELEMENT_NODE) {
+          if (node.tagName && node.tagName.toLowerCase() === "p") pEls.push(node);
+          pEls.push(...Array.from(node.querySelectorAll("p")));
+        } else if (node.parentElement) {
+          pEls.push(...Array.from(node.parentElement.querySelectorAll("p")));
+        }
+        if (pEls.length) {
+          const parsed = pEls.map(p => parseParagraph(p)).filter(Boolean);
+          appendLogs(parsed);
+        }
+      };
+
+      const processExisting = (container) => {
+        const parsed = Array.from(container.querySelectorAll("p")).map(p => parseParagraph(p)).filter(Boolean);
+        appendLogs(parsed);
+      };
+
+      let observer = null;
+      const observeContainer = (container) => {
+        try {
+          processExisting(container);
+          observer = new MutationObserver((mutations) => {
+            mutations.forEach(m => {
+              if (m.type === "childList" && m.addedNodes.length) {
+                m.addedNodes.forEach(n => processNode(n));
+              }
+            });
+          });
+          observer.observe(container, { childList: true, subtree: true });
+        } catch (e) {
+          debug.warn("logs", "observeContainer failed", e);
+        }
+      };
+
+      const initLogs = () => {
+        const container = document.getElementById("team_log_actual");
+        if (container) {
+          observeContainer(container);
+        } else {
+          const docObs = new MutationObserver(() => {
+            const c = document.getElementById("team_log_actual");
+            if (c) {
+              docObs.disconnect();
+              observeContainer(c);
+            }
+          });
+          docObs.observe(document.documentElement || document.body, { childList: true, subtree: true });
+          setTimeout(() => docObs.disconnect(), 15000);
+        }
+      };
+
+      const matchPattern = (pattern, entry) => {
+        if (!pattern || !entry) return false;
+        const tokens = pattern.toString().trim().split(/\s+/).filter(Boolean).map(t => t.toLowerCase());
+        if (!tokens.length) return false;
+        const hay = [entry.action || "", entry.method || "", entry.target || "", entry.actionRaw || "", entry.rawText || ""].join(" ").toLowerCase();
+        return tokens.every(tok => hay.indexOf(tok) !== -1);
+      };
+
+      const init = () => {
+        initLogs();
+        return true;
+      };
+
+      const destroy = () => {
+        if (observer) {
+          try { observer.disconnect(); } catch (e) {}
+          observer = null;
+        }
+        return true;
+      };
+
+      return Object.freeze({
+        on(a, b) {
+          try {
+            if (typeof a === "function" && !b) {
+              validateCallback(a, "callback");
+              events.on("log", a);
+              setTimeout(() => logEntries.filter(e => !e.isTimestamp).forEach(a), 0);
+              return (fn) => events.off("log", fn);
+            }
+            if (typeof a === "string" && typeof b === "function") {
+              validateString(a, "event name");
+              validateCallback(b, "handler");
+              const str = a.trim();
+              if (str.indexOf(" ") !== -1) {
+                const wrapper = (entry) => { if (matchPattern(str, entry)) b(entry); };
+                events.on("log", wrapper);
+                setTimeout(() => logEntries.filter(e => !e.isTimestamp && matchPattern(str, e)).forEach(b), 0);
+                return () => events.off("log", wrapper);
+              }
+              events.on(str, b);
+              if (str === "log") setTimeout(() => logEntries.filter(e => !e.isTimestamp).forEach(b), 0);
+              if (str === "log:action") setTimeout(() => logEntries.filter(e => !e.isTimestamp).forEach(e => b({ action: e.action, method: e.method, target: e.target, user: e.actor, timestamp: e.timeIso || e.capturedAt, raw: e.actionRaw })), 0);
+              return (fn) => events.off(str, fn);
+            }
+            throw new Error("on() requires (callback) or (eventName, handler)");
+          } catch (e) {
+            debug.error("logs", "on() validation error:", e.message);
+            throw e;
+          }
+        },
+        onVerb(verb, h) {
+          try {
+            validateString(verb, "verb");
+            validateCallback(h, "handler");
+            events.on("log:verb:" + verb, h);
+            setTimeout(() => logEntries.filter(e => !e.isTimestamp && e.action === verb).forEach(h), 0);
+            return () => events.off("log:verb:" + verb, h);
+          } catch (e) {
+            debug.error("logs", "onVerb() validation error:", e.message);
+            throw e;
+          }
+        },
+        onMethod(meth, h) {
+          try {
+            validateString(meth, "method");
+            validateCallback(h, "handler");
+            events.on("log:method:" + meth, h);
+            setTimeout(() => logEntries.filter(e => !e.isTimestamp && e.method === meth).forEach(h), 0);
+            return () => events.off("log:method:" + meth, h);
+          } catch (e) {
+            debug.error("logs", "onMethod() validation error:", e.message);
+            throw e;
+          }
+        },
+        onMatch(ruleName, h) {
+          try {
+            validateString(ruleName, "ruleName");
+            validateCallback(h, "handler");
+            events.on("log:match:" + ruleName, h);
+            setTimeout(() => logEntries.filter(e => !e.isTimestamp && e.matchRule === ruleName).forEach(h), 0);
+            return () => events.off("log:match:" + ruleName, h);
+          } catch (e) {
+            debug.error("logs", "onMatch() validation error:", e.message);
+            throw e;
+          }
+        },
+        onPattern(pattern, h) {
+          try {
+            validateString(pattern, "pattern");
+            validateCallback(h, "handler");
+            return this.on(pattern, h);
+          } catch (e) {
+            debug.error("logs", "onPattern() validation error:", e.message);
+            throw e;
+          }
+        },
+        onAction(h) {
+          try {
+            validateCallback(h, "handler");
+            events.on("log:action", h);
+            setTimeout(() => logEntries.filter(e => !e.isTimestamp).forEach(e => h({ action: e.action, method: e.method, target: e.target, user: e.actor, timestamp: e.timeIso || e.capturedAt, raw: e.actionRaw })), 0);
+            return () => events.off("log:action", h);
+          } catch (e) {
+            debug.error("logs", "onAction() validation error:", e.message);
+            throw e;
+          }
+        },
+        addRule(rule) {
+          try {
+            validateRule(rule, "rule");
+            const r = {
+              name: rule.name,
+              regex: rule.regex instanceof RegExp ? rule.regex : new RegExp(rule.regex),
+              mapper: typeof rule.mapper === "function" ? rule.mapper : (m) => ({ action: (m[1] || m[0] || "").toLowerCase(), target: m[2] ? m[2].trim() : null })
+            };
+            if (rules.some(existing => existing.name === r.name)) {
+              throw new Error(`Rule name "${r.name}" already exists`);
+            }
+            rules.push(r);
+            events.emit("rules:changed", rules.slice());
+          } catch (e) {
+            debug.error("logs", "addRule() validation error:", e.message);
+            throw e;
+          }
+        },
+        removeRule(name) {
+          try {
+            validateString(name, "name");
+            const before = rules.length;
+            rules = rules.filter(r => r.name !== name);
+            if (rules.length !== before) events.emit("rules:changed", rules.slice());
+            return rules.length !== before;
+          } catch (e) {
+            debug.error("logs", "removeRule() validation error:", e.message);
+            throw e;
+          }
+        },
+        listRules: () => rules.slice(),
+        getRules: () => rules.slice(),
+        getLogs: () => logEntries.slice(),
+        clearLogs: () => { logEntries = []; hashes = new Set(); },
+        forceProcess: () => {
+          const c = document.getElementById("team_log_actual");
+          if (c) processExisting(c);
+        },
+        init,
+        destroy,
+        events
+      });
+    })();
+
     return Object.freeze({
       promote,
       demote,
@@ -608,6 +977,7 @@ const version = "2.1.9";
       getCurrentJoinedShip,
       initSaveJoinedShip,
       clearCurrentShip,
+      logs
     });
   })();
   const storage = (() => {
@@ -1415,7 +1785,7 @@ const version = "2.1.9";
             if (it.badge.image) {
               const img = document.createElement("img");
               img.src = it.badge.image;
-             badge.appendChild(img);
+              badge.appendChild(img);
             }
             if (it.badge.tooltip) {
               const tip = document.createElement("span");
@@ -1497,7 +1867,7 @@ const version = "2.1.9";
       }
     };
     const setOutfit = (isInGame, outfit) => {
-      deprecate("Outfit API are no longer work. please stop using it");
+      debug.forceWarn("outfit", "DEPRECATED;", "Outfit API are no longer work. please stop using it");
       if (!outfit || typeof outfit !== "object") return;
       if (isInGame) {
         if (!wsReady || !msgpackReady) return;

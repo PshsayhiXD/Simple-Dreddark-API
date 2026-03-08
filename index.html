@@ -1,315 +1,385 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Dreddark API v2 Documentation</title>
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
     <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
     <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
     <style>
-        * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Roboto', sans-serif; line-height: 1.6; color: #24292e; background: #f6f8fa; }
-        
-        .header { 
-            background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%); 
-            color: white; 
-            padding: 48px 24px; 
-            box-shadow: 0 2px 4px rgba(0,0,0,0.1); 
-        }
-        .header-content { max-width: 1200px; margin: 0 auto; }
-        .header h1 { font-size: 2.5rem; font-weight: 300; margin-bottom: 8px; }
-        .version { 
-            display: inline-block; 
-            background: rgba(255,255,255,0.2); 
-            padding: 4px 12px; 
-            border-radius: 16px; 
-            font-size: 0.875rem; 
-            margin-left: 12px; 
-        }
-        .header p { font-size: 1.125rem; opacity: 0.9; margin-top: 16px; }
-        
-        .nav { 
-            background: white; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.12); 
-            position: sticky; 
-            top: 0; 
-            z-index: 100; 
-        }
-        .nav-content { 
-            max-width: 1200px; 
-            margin: 0 auto; 
-            padding: 0 24px; 
-            display: flex; 
-            gap: 24px; 
-            overflow-x: auto; 
-        }
-        .nav a { 
-            display: flex; 
-            align-items: center; 
-            gap: 8px; 
-            padding: 16px 0; 
-            color: #5f6368; 
-            text-decoration: none; 
-            border-bottom: 2px solid transparent; 
-            transition: all 0.2s; 
-            white-space: nowrap; 
-        }
-        .nav a:hover { color: #1a73e8; border-bottom-color: #1a73e8; }
-        
-        .container { max-width: 1200px; margin: 0 auto; padding: 40px 24px; }
-        .section { 
-            background: white; 
-            border-radius: 8px; 
-            padding: 32px; 
-            margin-bottom: 24px; 
-            box-shadow: 0 1px 3px rgba(0,0,0,0.08); 
-        }
-        .section h2 { 
-            font-size: 1.75rem; 
-            font-weight: 400; 
-            margin-bottom: 24px; 
-            color: #1a73e8; 
-            display: flex; 
-            align-items: center; 
-            gap: 12px; 
-        }
-        .section h3 { 
-            font-size: 1.25rem; 
-            font-weight: 500; 
-            margin: 32px 0 16px 0; 
-            color: #202124; 
-        }
-        
-        .function-bg { 
-            border-left: 4px solid #e8f0fe; 
-            padding: 20px 24px; 
-            margin: 24px 0; 
-            background: #f8f9fa; 
-            border-radius: 4px; 
-        }
-        .function-name { 
-            font-family: 'Roboto Mono', monospace; 
-            font-size: 1.125rem; 
-            font-weight: 500; 
-            color: #1a73e8; 
-            margin-bottom: 12px; 
-        }
-        .function-desc { color: #5f6368; margin-bottom: 16px; }
-        
-        pre[class*="language-"] { 
-            margin: 16px 0 !important; 
-            border-radius: 4px !important; 
-        }
-        
-        code[class*="language-"],
-        pre[class*="language-"] {
-            text-shadow: none !important;
-            line-height: 1.6 !important;
-        }
-        
-        .token {
-            display: inline !important;
-            position: relative !important;
-        }
-        
-        table { width: 100%; border-collapse: collapse; margin: 16px 0; }
-        th, td { padding: 12px; text-align: left; border-bottom: 1px solid #e8eaed; }
-        th { background: #f1f3f4; font-weight: 500; color: #5f6368; }
-        
-        code:not([class*="language-"]) { 
-            background: #f1f3f4; 
-            padding: 2px 6px; 
-            border-radius: 3px; 
-            font-family: 'Roboto Mono', monospace; 
-            font-size: 0.875rem; 
-        }
-        
-        .badge { 
-            display: inline-block; 
-            padding: 4px 8px; 
-            border-radius: 12px; 
-            font-size: 0.75rem; 
-            font-weight: 500; 
-            margin-left: 8px; 
-        }
-        .badge-async { background: #e8f0fe; color: #1967d2; }
-        .badge-deprecated { background: #fce8e6; color: #c5221f; }
-        
-        .info { 
-            background: #e8f0fe; 
-            border-left: 4px solid #1a73e8; 
-            padding: 16px; 
-            border-radius: 4px; 
-            margin: 16px 0; 
-        }
-        .warning { 
-            background: #fef7e0; 
-            border-left: 4px solid #f9ab00; 
-            padding: 16px; 
-            border-radius: 4px; 
-            margin: 16px 0; 
-        }
-        .material-icons { vertical-align: middle; margin-right: 8px; font-size: 20px; }
-        
-        footer { 
-            background: white; 
-            border-top: 1px solid #e8eaed; 
-            padding: 32px 24px; 
-            margin-top: 48px; 
-            text-align: center; 
-            color: #5f6368; 
-        }
-        footer a { color: #1a73e8; text-decoration: none; }
-        footer a:hover { text-decoration: underline; }
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Roboto", sans-serif;
+        line-height: 1.6;
+        color: #24292e;
+        background: #f6f8fa;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+        color: white;
+        padding: 48px 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 300;
+        margin-bottom: 8px;
+      }
+      .version {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.875rem;
+        margin-left: 12px;
+      }
+      .header p {
+        font-size: 1.125rem;
+        opacity: 0.9;
+        margin-top: 16px;
+      }
+
+      .nav {
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      .nav-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        gap: 24px;
+        overflow-x: auto;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 0;
+        color: #5f6368;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      .nav a:hover {
+        color: #1a73e8;
+        border-bottom-color: #1a73e8;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 24px;
+      }
+      .section {
+        background: white;
+        border-radius: 8px;
+        padding: 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+      }
+      .section h2 {
+        font-size: 1.75rem;
+        font-weight: 400;
+        margin-bottom: 24px;
+        color: #1a73e8;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      .section h3 {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin: 32px 0 16px 0;
+        color: #202124;
+      }
+
+      .function-bg {
+        border-left: 4px solid #e8f0fe;
+        padding: 20px 24px;
+        margin: 24px 0;
+        background: #f8f9fa;
+        border-radius: 4px;
+      }
+      .function-name {
+        font-family: "Roboto Mono", monospace;
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: #1a73e8;
+        margin-bottom: 12px;
+      }
+      .function-desc {
+        color: #5f6368;
+        margin-bottom: 16px;
+      }
+
+      pre[class*="language-"] {
+        margin: 16px 0 !important;
+        border-radius: 4px !important;
+      }
+
+      code[class*="language-"],
+      pre[class*="language-"] {
+        text-shadow: none !important;
+        line-height: 1.6 !important;
+      }
+
+      .token {
+        display: inline !important;
+        position: relative !important;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e8eaed;
+      }
+      th {
+        background: #f1f3f4;
+        font-weight: 500;
+        color: #5f6368;
+      }
+
+      code:not([class*="language-"]) {
+        background: #f1f3f4;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: "Roboto Mono", monospace;
+        font-size: 0.875rem;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-left: 8px;
+      }
+      .badge-async {
+        background: #e8f0fe;
+        color: #1967d2;
+      }
+      .badge-deprecated {
+        background: #fce8e6;
+        color: #c5221f;
+      }
+
+      .info {
+        background: #e8f0fe;
+        border-left: 4px solid #1a73e8;
+        padding: 16px;
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+      .warning {
+        background: #fef7e0;
+        border-left: 4px solid #f9ab00;
+        padding: 16px;
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+      .material-icons {
+        vertical-align: middle;
+        margin-right: 8px;
+        font-size: 20px;
+      }
+
+      footer {
+        background: white;
+        border-top: 1px solid #e8eaed;
+        padding: 32px 24px;
+        margin-top: 48px;
+        text-align: center;
+        color: #5f6368;
+      }
+      footer a {
+        color: #1a73e8;
+        text-decoration: none;
+      }
+      footer a:hover {
+        text-decoration: underline;
+      }
     </style>
-</head>
-<body>
+  </head>
+  <body>
     <div id="root"></div>
 
     <script type="text/babel">
-        const { useState, useEffect } = React;
+      const { useState, useEffect } = React;
 
-        const Icon = ({ name }) => <span className="material-icons">{name}</span>;
-        
-        const Badge = ({ type, children }) => (
-            <span className={`badge badge-${type}`}>{children}</span>
+      const Icon = ({ name }) => <span className="material-icons">{name}</span>;
+
+      const Badge = ({ type, children }) => <span className={`badge badge-${type}`}>{children}</span>;
+
+      const CodeBlock = ({ children, language = "javascript" }) => {
+        useEffect(() => {
+          Prism.highlightAll();
+        }, [children]);
+
+        return (
+          <pre>
+            <code className={`language-${language}`}>{children.trim()}</code>
+          </pre>
         );
+      };
 
-        const CodeBlock = ({ children, language = 'javascript' }) => {
-            useEffect(() => {
-                Prism.highlightAll();
-            }, [children]);
+      const FunctionDoc = ({ name, desc, code, async, deprecated, children }) => (
+        <div className="function-bg">
+          <div className="function-name">
+            {name}
+            {async && <Badge type="async">async</Badge>}
+            {deprecated && <Badge type="deprecated">DEPRECATED</Badge>}
+          </div>
+          {desc && <div className="function-desc">{desc}</div>}
+          {code && <CodeBlock>{code}</CodeBlock>}
+          {children}
+        </div>
+      );
 
-            return (
-                <pre>
-                    <code className={`language-${language}`}>
-                        {children.trim()}
-                    </code>
-                </pre>
-            );
-        };
+      const ParamTable = ({ params }) => (
+        <table>
+          <thead>
+            <tr>
+              <th>{params[0]?.isOption ? "Option" : params[0]?.isHandler ? "Handler Property" : "Parameter"}</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {params.map((p, i) => (
+              <tr key={i}>
+                <td>
+                  <code>{p.name}</code>
+                </td>
+                <td>{p.type}</td>
+                <td>{p.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
 
-        const FunctionDoc = ({ name, desc, code, async, deprecated, children }) => (
-            <div className="function-bg">
-                <div className="function-name">
-                    {name}
-                    {async && <Badge type="async">async</Badge>}
-                    {deprecated && <Badge type="deprecated">DEPRECATED</Badge>}
-                </div>
-                {desc && <div className="function-desc">{desc}</div>}
-                {code && <CodeBlock>{code}</CodeBlock>}
-                {children}
+      const EventTable = ({ events }) => (
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Payload</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((e, i) => (
+              <tr key={i}>
+                <td>
+                  <code>{e.name}</code>
+                </td>
+                <td>
+                  <code>{e.payload}</code>
+                </td>
+                <td>{e.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+
+      const InfoBox = ({ children }) => (
+        <div className="info">
+          <Icon name="info" />
+          {children}
+        </div>
+      );
+
+      const WarningBox = ({ children }) => (
+        <div className="warning">
+          <Icon name="warning" />
+          {children}
+        </div>
+      );
+
+      const App = () => {
+        const navItems = [
+          { id: "start", icon: "play_arrow", label: "Getting Started" },
+          { id: "debug", icon: "bug_report", label: "Debug" },
+          { id: "events", icon: "event", label: "Events" },
+          { id: "chat", icon: "chat", label: "Chat" },
+          { id: "ship", icon: "directions_boat", label: "Ship" },
+          { id: "client", icon: "person", label: "Client" },
+          { id: "commands", icon: "terminal", label: "Commands" },
+          { id: "mission", icon: "assignment", label: "Mission" },
+          { id: "pvp", icon: "sports_mma", label: "PvP" },
+          { id: "storage", icon: "storage", label: "Storage" },
+          { id: "utils", icon: "build", label: "Utils" },
+          { id: "dom", icon: "code", label: "DOM" },
+        ];
+
+        return (
+          <>
+            <div className="header">
+              <div className="header-content">
+                <h1>
+                  Simple Dreddark API v2
+                  <span className="version">v2.2.0</span>
+                </h1>
+                <p>Developer API for drednot.io - A comprehensive JavaScript library for game interaction</p>
+              </div>
             </div>
-        );
 
-        const ParamTable = ({ params }) => (
-            <table>
-                <thead>
-                    <tr>
-                        <th>{params[0]?.isOption ? 'Option' : params[0]?.isHandler ? 'Handler Property' : 'Parameter'}</th>
-                        <th>Type</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {params.map((p, i) => (
-                        <tr key={i}>
-                            <td><code>{p.name}</code></td>
-                            <td>{p.type}</td>
-                            <td>{p.desc}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        );
+            <nav className="nav">
+              <div className="nav-content">
+                {navItems.map((item) => (
+                  <a key={item.id} href={`#${item.id}`}>
+                    <Icon name={item.icon} />
+                    {item.label}
+                  </a>
+                ))}
+              </div>
+            </nav>
 
-        const EventTable = ({ events }) => (
-            <table>
-                <thead>
-                    <tr>
-                        <th>Event</th>
-                        <th>Payload</th>
-                        <th>Description</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {events.map((e, i) => (
-                        <tr key={i}>
-                            <td><code>{e.name}</code></td>
-                            <td><code>{e.payload}</code></td>
-                            <td>{e.desc}</td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        );
+            <div className="container">
+              {/* Getting Started */}
+              <section id="start" className="section">
+                <h2>
+                  <Icon name="play_arrow" />
+                  Getting Started
+                </h2>
+                <p>
+                  The Dreddark API is globally accessible via the <code>Dreddark</code> object after the userscript
+                  loads.
+                </p>
 
-        const InfoBox = ({ children }) => (
-            <div className="info">
-                <Icon name="info" />
-                {children}
-            </div>
-        );
-
-        const WarningBox = ({ children }) => (
-            <div className="warning">
-                <Icon name="warning" />
-                {children}
-            </div>
-        );
-
-        const App = () => {
-            const navItems = [
-                { id: 'start', icon: 'play_arrow', label: 'Getting Started' },
-                { id: 'debug', icon: 'bug_report', label: 'Debug' },
-                { id: 'events', icon: 'event', label: 'Events' },
-                { id: 'chat', icon: 'chat', label: 'Chat' },
-                { id: 'ship', icon: 'directions_boat', label: 'Ship' },
-                { id: 'client', icon: 'person', label: 'Client' },
-                { id: 'commands', icon: 'terminal', label: 'Commands' },
-                { id: 'mission', icon: 'assignment', label: 'Mission' },
-                { id: 'pvp', icon: 'sports_mma', label: 'PvP' },
-                { id: 'storage', icon: 'storage', label: 'Storage' },
-                { id: 'utils', icon: 'build', label: 'Utils' },
-                { id: 'dom', icon: 'code', label: 'DOM' }
-            ];
-
-            return (
-                <>
-                    <div className="header">
-                        <div className="header-content">
-                            <h1>
-                                Simple Dreddark API v2
-                                <span className="version">v2.1.9</span>
-                            </h1>
-                            <p>Developer API for drednot.io - A comprehensive JavaScript library for game interaction</p>
-                        </div>
-                    </div>
-
-                    <nav className="nav">
-                        <div className="nav-content">
-                            {navItems.map(item => (
-                                <a key={item.id} href={`#${item.id}`}>
-                                    <Icon name={item.icon} />
-                                    {item.label}
-                                </a>
-                            ))}
-                        </div>
-                    </nav>
-
-                    <div className="container">
-                        {/* Getting Started */}
-                        <section id="start" className="section">
-                            <h2><Icon name="play_arrow" />Getting Started</h2>
-                            <p>The Dreddark API is globally accessible via the <code>Dreddark</code> object after the userscript loads.</p>
-                            
-                            <CodeBlock>{`// Access the API
+                <CodeBlock>{`
+// Access the API
 const api = Dreddark;
 
 // Check version
@@ -320,134 +390,184 @@ Dreddark.use(function(api) {
     api.chat.send("Hello from plugin!");
 });`}</CodeBlock>
 
-                            <InfoBox>
-                                <strong>Note:</strong> All examples assume the API is loaded and available.
-                            </InfoBox>
-                        </section>
+                <InfoBox>
+                  <strong>Note:</strong> All examples assume the API is loaded and available.
+                </InfoBox>
+              </section>
 
-                        {/* Debug */}
-                        <section id="debug" className="section">
-                            <h2><Icon name="bug_report" />Debug</h2>
-                            <p>Styled console logging system with Material Design aesthetics.</p>
+              {/* Debug */}
+              <section id="debug" className="section">
+                <h2>
+                  <Icon name="bug_report" />
+                  Debug
+                </h2>
+                <p>Styled console logging system with Material Design aesthetics.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.log(moduleName: string, ...args: any)"
-                                desc="Log a message with optional module name."
-                                code={`// Basic log
+                <FunctionDoc
+                  name="Dreddark.debug.log(moduleName: string, ...args: any)"
+                  desc="Log a message with optional module name."
+                  code={`// Basic log
 Dreddark.debug.log("MyModule", "Message", data);
 
 // Without module name
 Dreddark.debug.log("Just a message");`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.warn(moduleName: string, ...args: any)"
-                                desc="Log a warning message."
-                                code={`Dreddark.debug.warn("MyModule", "Warning message");`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.debug.warn(moduleName: string, ...args: any)"
+                  desc="Log a warning message."
+                  code={`Dreddark.debug.warn("MyModule", "Warning message");`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.error(moduleName: string, ...args: any)"
-                                desc="Log an error message."
-                                code={`Dreddark.debug.error("MyModule", "Error occurred", error);`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.debug.error(moduleName: string, ...args: any)"
+                  desc="Log an error message."
+                  code={`Dreddark.debug.error("MyModule", "Error occurred", error);`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.group(moduleName: string, label: string)"
-                                desc="Start a console group."
-                                code={`Dreddark.debug.group("MyModule", "Processing Items");
+                <FunctionDoc
+                  name="Dreddark.debug.group(moduleName: string, label: string)"
+                  desc="Start a console group."
+                  code={`Dreddark.debug.group("MyModule", "Processing Items");
 // ... grouped logs ...
 Dreddark.debug.groupEnd();`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.groupCollapsed(moduleName: string, label: string)"
-                                desc="Start a collapsed console group."
-                            />
+                <FunctionDoc
+                  name="Dreddark.debug.groupCollapsed(moduleName: string, label: string)"
+                  desc="Start a collapsed console group."
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.groupEnd()"
-                                desc="End the current console group."
-                            />
+                <FunctionDoc name="Dreddark.debug.groupEnd()" desc="End the current console group." />
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.module(name: string)"
-                                desc="Create a module-specific logger."
-                                code={`const logger = Dreddark.debug.module("MyModule");
+                <FunctionDoc
+                  name="Dreddark.debug.module(name: string)"
+                  desc="Create a module-specific logger."
+                  code={`const logger = Dreddark.debug.module("MyModule");
 logger.log("Info message");
 logger.warn("Warning");
 logger.error("Error");`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.debug.banner(title: string)"
-                                desc="Display a styled banner message."
-                                code={`Dreddark.debug.banner("SYSTEM READY");`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.debug.banner(title: string)"
+                  desc="Display a styled banner message."
+                  code={`Dreddark.debug.banner("SYSTEM READY");`}
+                />
 
-                            <h3>Configuration</h3>
-                            <ParamTable params={[
-                                { name: 'debug.enabled', type: 'Boolean', desc: 'Enable/disable debug output (default: true)' },
-                                { name: 'debug.showMeta', type: 'Boolean', desc: 'Show metadata (source, timestamp) in logs (default: false)' },
-                                { name: 'debug.useGroups', type: 'Boolean', desc: 'Enable console grouping (default: true)' }
-                            ]} />
-                        </section>
+                <h3>Configuration</h3>
+                <ParamTable
+                  params={[
+                    {
+                      name: "debug.enabled",
+                      type: "Boolean",
+                      desc: "Enable/disable debug output (default: true)",
+                    },
+                    {
+                      name: "debug.showMeta",
+                      type: "Boolean",
+                      desc: "Show metadata (source, timestamp) in logs (default: false)",
+                    },
+                    {
+                      name: "debug.useGroups",
+                      type: "Boolean",
+                      desc: "Enable console grouping (default: true)",
+                    },
+                  ]}
+                />
+              </section>
 
-                        {/* Events */}
-                        <section id="events" className="section">
-                            <h2><Icon name="event" />Events</h2>
-                            <p>Simple event bus for inter-component communication.</p>
+              {/* Events */}
+              <section id="events" className="section">
+                <h2>
+                  <Icon name="event" />
+                  Events
+                </h2>
+                <p>Simple event bus for inter-component communication.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.events.on(eventType: string, callback: function)"
-                                desc="Listen to an event."
-                                code={`Dreddark.events.on("chat", function(data) {
+                <FunctionDoc
+                  name="Dreddark.events.on(eventType: string, callback: function)"
+                  desc="Listen to an event."
+                  code={`Dreddark.events.on("chat", function(data) {
     console.log("Chat message:", data.message);
 });`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.events.emit(eventType: string, payload: any)"
-                                desc="Emit an event with optional payload."
-                                code={`Dreddark.events.emit("customEvent", { /* data */ });`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.events.emit(eventType: string, payload: any)"
+                  desc="Emit an event with optional payload."
+                  code={`Dreddark.events.emit("customEvent", { /* data */ });`}
+                />
 
-                            <h3>Available Events</h3>
-                            <EventTable events={[
-                                { name: 'chat', payload: '{user, role, message, badges, ...}', desc: 'Chat message received' },
-                                { name: 'mission', payload: '{mission, location, isOpen, ...}', desc: 'Mission announcement' },
-                                { name: 'warning', payload: '{raw, timestamp, ...}', desc: 'System warning' },
-                                { name: 'roleChange', payload: '{action, targetUser, byUser, newRole, ...}', desc: 'Player rank changed' },
-                                { name: 'shipJoin', payload: '{user, role, badges, ...}', desc: 'Player joined ship' },
-                                { name: 'shipLeave', payload: '{user, role, badges, ...}', desc: 'Player left ship' },
-                                { name: 'log', payload: '{action, method, target, actor, ...}', desc: 'Ship log entry' },
-                                { name: 'log:action', payload: '{action, method, target, user, timestamp, raw}', desc: 'Simplified log action' }
-                            ]} />
-                        </section>
+                <h3>Available Events</h3>
+                <EventTable
+                  events={[
+                    {
+                      name: "chat",
+                      payload: "{user, role, message, badges, ...}",
+                      desc: "Chat message received",
+                    },
+                    {
+                      name: "mission",
+                      payload: "{mission, location, isOpen, ...}",
+                      desc: "Mission announcement",
+                    },
+                    { name: "warning", payload: "{raw, timestamp, ...}", desc: "System warning" },
+                    {
+                      name: "roleChange",
+                      payload: "{action, targetUser, byUser, newRole, ...}",
+                      desc: "Player rank changed",
+                    },
+                    {
+                      name: "shipJoin",
+                      payload: "{user, role, badges, ...}",
+                      desc: "Player joined ship",
+                    },
+                    {
+                      name: "shipLeave",
+                      payload: "{user, role, badges, ...}",
+                      desc: "Player left ship",
+                    },
+                    {
+                      name: "log",
+                      payload: "{action, method, target, actor, ...}",
+                      desc: "Ship log entry",
+                    },
+                    {
+                      name: "log:action",
+                      payload: "{action, method, target, user, timestamp, raw}",
+                      desc: "Simplified log action",
+                    },
+                  ]}
+                />
+              </section>
 
-                        {/* Chat */}
-                        <section id="chat" className="section">
-                            <h2><Icon name="chat" />Chat</h2>
-                            <p>Send messages and listen to chat events.</p>
+              {/* Chat */}
+              <section id="chat" className="section">
+                <h2>
+                  <Icon name="chat" />
+                  Chat
+                </h2>
+                <p>Send messages and listen to chat events.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.chat.send(...args: any)"
-                                desc="Send a chat message (rate-limited to prevent spam)."
-                                code={`// Send single message
+                <FunctionDoc
+                  name="Dreddark.chat.send(...args: any)"
+                  desc="Send a chat message (rate-limited to prevent spam)."
+                  code={`// Send single message
 Dreddark.chat.send("Hello world!");
 
 // Concatenate multiple arguments
 Dreddark.chat.send("Score:", 100, "points");`}
-                            >
-                                <InfoBox>
-                                    Messages are queued and sent with a 1-second delay between each to prevent rate limiting.
-                                </InfoBox>
-                            </FunctionDoc>
+                >
+                  <InfoBox>
+                    Messages are queued and sent with a 1-second delay between each to prevent rate limiting.
+                  </InfoBox>
+                </FunctionDoc>
 
-                            <FunctionDoc 
-                                name="Dreddark.chat.append(...items: object[])"
-                                desc="Append custom messages to chat display without sending to server."
-                                code={`Dreddark.chat.append({
+                <FunctionDoc
+                  name="Dreddark.chat.append(...items: object[])"
+                  desc="Append custom messages to chat display without sending to server."
+                  code={`Dreddark.chat.append({
     user: "System",
     text: "Custom notification",
     role: "Admin",
@@ -456,21 +576,48 @@ Dreddark.chat.send("Score:", 100, "points");`}
         tooltip: /* badge tooltip text */
     }
 });`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.chat.waitForChat(user: string, text: string | function, options: object)"
-                                desc="Wait for specific chat message with advanced pattern matching."
-                            >
-                                <ParamTable params={[
-                                    { name: 'user', type: 'String', desc: 'Username to match, or "*" for any user' },
-                                    { name: 'text', type: 'String | Function', desc: 'Exact text to match, "*" for any text, or function for custom matching' },
-                                    { name: 'options.onMatch', type: 'Function', desc: 'Required. Callback when message matches' },
-                                    { name: 'options.recallable', type: 'Boolean', desc: 'Allow multiple matches (default: false)' },
-                                    { name: 'options.timeout', type: 'Number', desc: 'Timeout in seconds (default: 15, use Infinity for no timeout)' },
-                                    { name: 'options.onFallback', type: 'Function', desc: 'Callback when timeout occurs without match' }
-                                ]} />
-                                <CodeBlock>{`// Wait for specific message (one-time)
+                <FunctionDoc
+                  name="Dreddark.chat.waitForChat(user: string, text: string | function, options: object)"
+                  desc="Wait for specific chat message with advanced pattern matching."
+                >
+                  <ParamTable
+                    params={[
+                      {
+                        name: "user",
+                        type: "String",
+                        desc: 'Username to match, or "*" for any user',
+                      },
+                      {
+                        name: "text",
+                        type: "String | Function",
+                        desc: 'Exact text to match, "*" for any text, or function for custom matching',
+                      },
+                      {
+                        name: "options.onMatch",
+                        type: "Function",
+                        desc: "Required. Callback when message matches",
+                      },
+                      {
+                        name: "options.recallable",
+                        type: "Boolean",
+                        desc: "Allow multiple matches (default: false)",
+                      },
+                      {
+                        name: "options.timeout",
+                        type: "Number",
+                        desc: "Timeout in seconds (default: 15, use Infinity for no timeout)",
+                      },
+                      {
+                        name: "options.onFallback",
+                        type: "Function",
+                        desc: "Callback when timeout occurs without match",
+                      },
+                    ]}
+                  />
+                  <CodeBlock>{`
+// Wait for specific message (one-time)
 await Dreddark.chat.waitForChat("PlayerName", "ready", {
     onMatch(data) {
         console.log("Player is ready!", data);
@@ -494,81 +641,192 @@ const cleanup = Dreddark.chat.waitForChat("*", function(msg) {
 
 // Stop listening
 cleanup();`}</CodeBlock>
-                            </FunctionDoc>
+                </FunctionDoc>
 
-                            <FunctionDoc name="Dreddark.chat.init()" desc="Initialize chat observer. Called automatically on load." />
-                            <FunctionDoc name="Dreddark.chat.destroy()" desc="Stop chat observer." />
-                        </section>
+                <FunctionDoc
+                  name="Dreddark.chat.init()"
+                  desc="Initialize chat observer. Called automatically on load."
+                />
+                <FunctionDoc name="Dreddark.chat.destroy()" desc="Stop chat observer." />
+              </section>
 
-                        {/* Ship */}
-                        <section id="ship" className="section">
-                            <h2><Icon name="directions_boat" />Ship Management</h2>
-                            <p>Functions for managing ship crew and operations.</p>
+              {/* Ship */}
+              <section id="ship" className="section">
+                <h2>
+                  <Icon name="directions_boat" />
+                  Ship Management
+                </h2>
+                <p>Functions for managing ship crew and operations.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.promote(user: string, targetRank: string | number)"
-                                desc="Promote a user to a higher rank."
-                                async
-                            >
-                                <ParamTable params={[
-                                    { name: 'user', type: 'String', desc: 'Username to promote' },
-                                    { name: 'targetRank', type: 'String | Number', desc: '"guest" (0), "crew" (1), or "captain" (3)' }
-                                ]} />
-                                <CodeBlock>{`await Dreddark.ship.promote("PlayerName", "crew");
+                <FunctionDoc
+                  name="Dreddark.ship.promote(user: string, targetRank: string | number)"
+                  desc="Promote a user to a higher rank."
+                  async
+                >
+                  <ParamTable
+                    params={[
+                      { name: "user", type: "String", desc: "Username to promote" },
+                      {
+                        name: "targetRank",
+                        type: "String | Number",
+                        desc: '"guest" (0), "crew" (1), or "captain" (3)',
+                      },
+                    ]}
+                  />
+                  <CodeBlock>{`
+await Dreddark.ship.promote("PlayerName", "crew");
 await Dreddark.ship.promote("PlayerName", 1); // Same as "crew"`}</CodeBlock>
-                            </FunctionDoc>
+                </FunctionDoc>
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.demote(user: string, targetRank: string | number)"
-                                desc="Demote a user to a lower rank."
-                                async
-                                code={`await Dreddark.ship.demote("PlayerName", "guest");`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.ship.demote(user: string, targetRank: string | number)"
+                  desc="Demote a user to a lower rank."
+                  async
+                  code={`await Dreddark.ship.demote("PlayerName", "guest");`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.isClientCap()"
-                                desc="Check if the current user is ship captain."
-                                code={`if (Dreddark.ship.isClientCap()) {
+                <FunctionDoc
+                  name="Dreddark.ship.isClientCap()"
+                  desc="Check if the current user is ship captain."
+                  code={`if (Dreddark.ship.isClientCap()) {
     console.log("You are the captain!");
 }`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.getAllShipPlayer()"
-                                desc="Get array of all players currently on the ship."
-                                code={`const players = Dreddark.ship.getAllShipPlayer();
+                <FunctionDoc
+                  name="Dreddark.ship.getAllShipPlayer()"
+                  desc="Get array of all players currently on the ship."
+                  code={`const players = Dreddark.ship.getAllShipPlayer();
 console.log("Ship crew:", players);`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.getUserContext(user: string)"
-                                desc="Get user context from team manager (requires captain)."
-                                async
-                                code={`const ctx = await Dreddark.ship.getUserContext("PlayerName");
+                <FunctionDoc
+                  name="Dreddark.ship.getUserContext(user: string)"
+                  desc="Get user context from team manager (requires captain)."
+                  async
+                  code={`const ctx = await Dreddark.ship.getUserContext("PlayerName");
 // Returns: { select, currentRank, ... } or null`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.join(shipCode: string)"
-                                desc="Join a ship by invite code."
-                                async
-                                code={`await Dreddark.ship.join(/* ship code */);`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.ship.ensureCrewControl()"
+                  desc="Ensure the Team Manager is opened and the 'Crew Control & Log' tab is active."
+                  async
+                >
+                  <p>
+                    This utility guarantees that the script is operating inside the correct Team Manager panel before
+                    performing crew-related actions. It automatically opens the team manager if closed and switches to
+                    the
+                    <b> Crew Control & Log</b> tab if necessary.
+                  </p>
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.motdEdit(text: string)"
-                                desc="Edit ship's Message of the Day."
-                                async
-                                code={`await Dreddark.ship.motdEdit("Welcome to our ship!");`}
-                            />
+                  <CodeBlock>{`
+const ok = await Dreddark.ship.ensureCrewControl();
+if (ok) {
+  console.log("Crew control ready.");
+}`}</CodeBlock>
 
-                            <h3>Ship Logs System</h3>
-                            <p>Advanced ship log parsing and event system.</p>
+                  <p>
+                    Returns <code>true</code> if the panel is ready, otherwise <code>false</code>.
+                  </p>
+                </FunctionDoc>
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.logs.on(eventOrCallback: string | function, handler?: function)"
-                                desc="Listen to ship log events with flexible patterns."
-                                code={`// Listen to all logs
+                <h3>Gravity Snake Controls</h3>
+                <p>Hidden gravity controls triggered through the crew control search panel.</p>
+
+                <FunctionDoc
+                  name="Dreddark.ship.coolsnake303(direction: number)"
+                  desc="Trigger the hidden gravity control buttons for coolsnake303."
+                  async
+                >
+                  <ParamTable
+                    params={[
+                      {
+                        name: "direction",
+                        type: "Number",
+                        desc: "Direction to trigger (1=left, 2=up, 3=down, 4=right).",
+                      },
+                    ]}
+                  />
+                  <CodeBlock>{`
+// Move left
+await Dreddark.ship.coolsnake303(1);
+
+// Move up
+await Dreddark.ship.coolsnake303(2);
+
+// Move down
+await Dreddark.ship.coolsnake303(3);
+
+// Move right
+await Dreddark.ship.coolsnake303(4);`}</CodeBlock>
+                </FunctionDoc>
+
+                <FunctionDoc
+                  name="Dreddark.ship.coolsnakeAuto.start(queue: number[], delay?: number)"
+                  desc="Start automated gravity movement using a repeating queue pattern."
+                >
+                  <ParamTable
+                    params={[
+                      { name: "queue", type: "Number[]", desc: "Array of directions to repeat." },
+                      {
+                        name: "delay",
+                        type: "Number",
+                        desc: "Delay between moves in milliseconds. Default is 400.",
+                      },
+                    ]}
+                  />
+                  <CodeBlock>{`
+// Example queue
+// 4 → right
+// 2 → up
+// 3 → down
+// 1 → left
+Dreddark.ship.coolsnakeAuto.start([4,2,3,1], 300);
+
+// Vertical oscillation
+Dreddark.ship.coolsnakeAuto.start([2,3], 250);
+
+// Horizontal oscillation
+Dreddark.ship.coolsnakeAuto.start([1,4], 250);`}</CodeBlock>
+                </FunctionDoc>
+
+                <FunctionDoc
+                  name="Dreddark.ship.coolsnakeAuto.stop()"
+                  desc="Stop the current coolsnake automation loop."
+                  code={`Dreddark.ship.coolsnakeAuto.stop();`}
+                />
+
+                <h3>Direction Reference</h3>
+                <CodeBlock>{`
+{
+  1: "left",
+  2: "up",
+  3: "down",
+  4: "right"
+}`}</CodeBlock>
+
+                <FunctionDoc
+                  name="Dreddark.ship.join(shipCode: string)"
+                  desc="Join a ship by invite code."
+                  async
+                  code={`await Dreddark.ship.join(/* ship code */);`}
+                />
+
+                <FunctionDoc
+                  name="Dreddark.ship.motdEdit(text: string)"
+                  desc="Edit ship's Message of the Day."
+                  async
+                  code={`await Dreddark.ship.motdEdit("Welcome to our ship!");`}
+                />
+
+                <h3>Ship Logs System</h3>
+                <p>Advanced ship log parsing and event system.</p>
+
+                <FunctionDoc
+                  name="Dreddark.ship.logs.on(eventOrCallback: string | function, handler?: function)"
+                  desc="Listen to ship log events with flexible patterns."
+                  code={`// Listen to all logs
 Dreddark.ship.logs.on(function(entry) {
     console.log("Log:", entry.action, entry.target);
 });
@@ -577,26 +835,29 @@ Dreddark.ship.logs.on(function(entry) {
 Dreddark.ship.logs.on("used weapon", function(entry) {
     console.log("Weapon used!");
 });`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.logs.onVerb(verb: string, handler: function)"
-                                desc="Listen to logs with specific action verb."
-                                code={`Dreddark.ship.logs.onVerb("placed", function(entry) {
+                <FunctionDoc
+                  name="Dreddark.ship.logs.onVerb(verb: string, handler: function)"
+                  desc="Listen to logs with specific action verb."
+                  code={`Dreddark.ship.logs.onVerb("placed", function(entry) {
     console.log("Placed:", entry.target);
 });`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.ship.logs.addRule(rule: object)"
-                                desc="Add custom parsing rule for log entries."
-                            >
-                                <ParamTable params={[
-                                    { name: 'name', type: 'String', desc: 'Unique rule name' },
-                                    { name: 'regex', type: 'RegExp', desc: 'Pattern to match log text' },
-                                    { name: 'mapper', type: 'Function', desc: 'Extract data from regex match' }
-                                ]} />
-                                <CodeBlock>{`Dreddark.ship.logs.addRule({
+                <FunctionDoc
+                  name="Dreddark.ship.logs.addRule(rule: object)"
+                  desc="Add custom parsing rule for log entries."
+                >
+                  <ParamTable
+                    params={[
+                      { name: "name", type: "String", desc: "Unique rule name" },
+                      { name: "regex", type: "RegExp", desc: "Pattern to match log text" },
+                      { name: "mapper", type: "Function", desc: "Extract data from regex match" },
+                    ]}
+                  />
+                  <CodeBlock>{`
+Dreddark.ship.logs.addRule({
     name: "custom_action",
     regex: /^fired (.+) at (.+)$/i,
     mapper(match) {
@@ -607,10 +868,10 @@ Dreddark.ship.logs.on("used weapon", function(entry) {
         };
     }
 });`}</CodeBlock>
-                            </FunctionDoc>
+                </FunctionDoc>
 
-                            <h3>Rank Values</h3>
-                            <CodeBlock>{`{
+                <h3>Rank Values</h3>
+                <CodeBlock>{`{
     0: "guest",
     1: "crew",
     3: "captain",
@@ -618,61 +879,105 @@ Dreddark.ship.logs.on("used weapon", function(entry) {
     crew: 1,
     captain: 3
 }`}</CodeBlock>
-                        </section>
+              </section>
 
-                        {/* Client */}
-                        <section id="client" className="section">
-                            <h2><Icon name="person" />Client Information</h2>
-                            <p>Get information about the current player account.</p>
+              {/* Client */}
+              <section id="client" className="section">
+                <h2>
+                  <Icon name="person" />
+                  Client Information
+                </h2>
+                <p>Get information about the current player account.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.client.accountInfo()"
-                                desc="Fetch account information from server."
-                                async
-                                code={`const info = await Dreddark.client.accountInfo();
+                <FunctionDoc
+                  name="Dreddark.client.accountInfo()"
+                  desc="Fetch account information from server."
+                  async
+                  code={`const info = await Dreddark.client.accountInfo();
 // Returns: { name: string | null, isRegistered: boolean }
 console.log("Account:", info.name);
 console.log("Registered:", info.isRegistered);`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.client.getClientUsername()"
-                                desc="Get current player's username."
-                                async
-                                code={`const username = await Dreddark.client.getClientUsername();
+                <FunctionDoc
+                  name="Dreddark.client.getClientUsername()"
+                  desc="Get current player's username."
+                  async
+                  code={`const username = await Dreddark.client.getClientUsername();
 console.log("You are:", username);`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.client.isClientRegistered()"
-                                desc="Check if current account is registered."
-                                async
-                                code={`const registered = await Dreddark.client.isClientRegistered();
+                <FunctionDoc
+                  name="Dreddark.client.isClientRegistered()"
+                  desc="Check if current account is registered."
+                  async
+                  code={`const registered = await Dreddark.client.isClientRegistered();
 if (!registered) {
     console.log("Please register your account");
 }`}
-                            />
-                        </section>
+                />
+              </section>
 
-                        {/* Commands */}
-                        <section id="commands" className="section">
-                            <h2><Icon name="terminal" />Commands System</h2>
-                            <p>Register custom chat commands with arguments, rank requirements, and cooldowns.</p>
+              {/* Commands */}
+              <section id="commands" className="section">
+                <h2>
+                  <Icon name="terminal" />
+                  Commands System
+                </h2>
+                <p>Register custom chat commands with arguments, rank requirements, and cooldowns.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.commands.register(name: string, handler: object)"
-                                desc="Register a new command."
-                            >
-                                <ParamTable params={[
-                                    { name: 'prefix', type: 'String', desc: 'Command prefix (default: "?")', isHandler: true },
-                                    { name: 'rankRequire', type: 'Number', desc: 'Minimum rank required (0=guest, 1=crew, 3=captain)', isHandler: true },
-                                    { name: 'sessionCooldown', type: 'Number', desc: 'Per-user cooldown in ms (resets on page reload)', isHandler: true },
-                                    { name: 'persistCooldown', type: 'Number', desc: 'Per-user cooldown in ms (persists across reloads)', isHandler: true },
-                                    { name: 'globalCooldown', type: 'Number', desc: 'Global cooldown in ms for all users', isHandler: true },
-                                    { name: 'args', type: 'Array', desc: 'Argument definitions', isHandler: true },
-                                    { name: 'run', type: 'Function', desc: 'Command handler function(event, args, user)', isHandler: true }
-                                ]} />
-                                <CodeBlock>{`// Simple command
+                <FunctionDoc
+                  name="Dreddark.commands.register(name: string, handler: object)"
+                  desc="Register a new command."
+                >
+                  <ParamTable
+                    params={[
+                      {
+                        name: "prefix",
+                        type: "String",
+                        desc: 'Command prefix (default: "?")',
+                        isHandler: true,
+                      },
+                      {
+                        name: "rankRequire",
+                        type: "Number",
+                        desc: "Minimum rank required (0=guest, 1=crew, 3=captain)",
+                        isHandler: true,
+                      },
+                      {
+                        name: "sessionCooldown",
+                        type: "Number",
+                        desc: "Per-user cooldown in ms (resets on page reload)",
+                        isHandler: true,
+                      },
+                      {
+                        name: "persistCooldown",
+                        type: "Number",
+                        desc: "Per-user cooldown in ms (persists across reloads)",
+                        isHandler: true,
+                      },
+                      {
+                        name: "globalCooldown",
+                        type: "Number",
+                        desc: "Global cooldown in ms for all users",
+                        isHandler: true,
+                      },
+                      {
+                        name: "args",
+                        type: "Array",
+                        desc: "Argument definitions",
+                        isHandler: true,
+                      },
+                      {
+                        name: "run",
+                        type: "Function",
+                        desc: "Command handler function(event, args, user)",
+                        isHandler: true,
+                      },
+                    ]}
+                  />
+                  <CodeBlock>{`
+// Simple command
 Dreddark.commands.register("hello", {
     run(event, args, user) {
         Dreddark.chat.send("Hello " + event.user + "!");
@@ -702,31 +1007,34 @@ Dreddark.commands.register("give", {
         Dreddark.chat.send(\`Giving \${item}\`);
     }
 });`}</CodeBlock>
-                            </FunctionDoc>
+                </FunctionDoc>
 
-                            <FunctionDoc 
-                                name="Dreddark.commands.setDefaultPrefix(prefix: string)"
-                                desc="Set default command prefix for all commands."
-                                code={`Dreddark.commands.setDefaultPrefix("!");`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.commands.setDefaultPrefix(prefix: string)"
+                  desc="Set default command prefix for all commands."
+                  code={`Dreddark.commands.setDefaultPrefix("!");`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.commands.getDefaultPrefix()"
-                                desc="Get current default command prefix."
-                                code={`const prefix = Dreddark.commands.getDefaultPrefix();
+                <FunctionDoc
+                  name="Dreddark.commands.getDefaultPrefix()"
+                  desc="Get current default command prefix."
+                  code={`const prefix = Dreddark.commands.getDefaultPrefix();
 console.log("Prefix:", prefix); // Default: "?"`}
-                            />
-                        </section>
+                />
+              </section>
 
-                        {/* Mission */}
-                        <section id="mission" className="section">
-                            <h2><Icon name="assignment" />Mission System</h2>
-                            <p>Track mission timings and get information about current and future missions.</p>
+              {/* Mission */}
+              <section id="mission" className="section">
+                <h2>
+                  <Icon name="assignment" />
+                  Mission System
+                </h2>
+                <p>Track mission timings and get information about current and future missions.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.mission.getMissionState()"
-                                desc="Get current mission state (open/closed with timing)."
-                                code={`const state = Dreddark.mission.getMissionState();
+                <FunctionDoc
+                  name="Dreddark.mission.getMissionState()"
+                  desc="Get current mission state (open/closed with timing)."
+                  code={`const state = Dreddark.mission.getMissionState();
 console.log(state);
 /* Returns:
 {
@@ -743,115 +1051,177 @@ if (state.isOpen) {
     const mins = Math.floor((state.closeAt - Date.now()/1000)/60);
     console.log(\`Mission closes in \${mins} minutes\`);
 }`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.mission.getFutureMissions(count: number)"
-                                desc="Get list of upcoming mission windows."
-                                code={`const upcoming = Dreddark.mission.getFutureMissions(5);
+                <FunctionDoc
+                  name="Dreddark.mission.getFutureMissions(count: number)"
+                  desc="Get list of upcoming mission windows."
+                  code={`const upcoming = Dreddark.mission.getFutureMissions(5);
 upcoming.forEach((mission, i) => {
     const date = new Date(mission.openAt * 1000);
     console.log(\`Mission \${i + 1}: \${date.toLocaleString()}\`);
 });`}
-                            />
+                />
 
-                            <InfoBox>
-                                <strong>Mission Timing:</strong> Missions open for 15 minutes every 45 minutes (15 min open, 30 min closed cycle).
-                            </InfoBox>
-                        </section>
+                <InfoBox>
+                  <strong>Mission Timing:</strong> Missions open for 15 minutes every 45 minutes (15 min open, 30 min
+                  closed cycle).
+                </InfoBox>
+              </section>
 
-                        {/* PvP Events */}
-                        <section id="pvp" className="section">
-                            <h2><Icon name="sports_mma" />PvP Events</h2>
-                            <p>Query PvP event schedule.</p>
+              {/* PvP Events */}
+              <section id="pvp" className="section">
+                <h2>
+                  <Icon name="sports_mma" />
+                  PvP Events
+                </h2>
+                <p>Query PvP event schedule.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.pvpEvent.fetchSchedule()"
-                                desc="Fetch the latest PvP event schedule from server."
-                                async
-                                code={`await Dreddark.pvpEvent.fetchSchedule();`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.pvpEvent.fetchSchedule()"
+                  desc="Fetch the latest PvP event schedule from server."
+                  async
+                  code={`await Dreddark.pvpEvent.fetchSchedule();`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.pvpEvent.pvpEvent(type: string)"
-                                desc="Query PvP events by type or date."
-                                async
-                            >
-                                <table>
-                                    <thead>
-                                        <tr><th>Type</th><th>Description</th></tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr><td><code>"all"</code></td><td>All scheduled events</td></tr>
-                                        <tr><td><code>"today"</code></td><td>Events happening today</td></tr>
-                                        <tr><td><code>"next"</code></td><td>Next upcoming event</td></tr>
-                                        <tr><td>Day name</td><td>"monday", "tuesday", etc.</td></tr>
-                                    </tbody>
-                                </table>
-                                <CodeBlock>{`// Get today's events
+                <FunctionDoc
+                  name="Dreddark.pvpEvent.pvpEvent(type: string)"
+                  desc="Query PvP events by type or date."
+                  async
+                >
+                  <table>
+                    <thead>
+                      <tr>
+                        <th>Type</th>
+                        <th>Description</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td>
+                          <code>"all"</code>
+                        </td>
+                        <td>All scheduled events</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <code>"today"</code>
+                        </td>
+                        <td>Events happening today</td>
+                      </tr>
+                      <tr>
+                        <td>
+                          <code>"next"</code>
+                        </td>
+                        <td>Next upcoming event</td>
+                      </tr>
+                      <tr>
+                        <td>Day name</td>
+                        <td>"monday", "tuesday", etc.</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                  <CodeBlock>{`
+// Get today's events
 const todayEvents = await Dreddark.pvpEvent.pvpEvent("today");
 
 // Get next event
 const nextEvent = await Dreddark.pvpEvent.pvpEvent("next");`}</CodeBlock>
-                            </FunctionDoc>
-                        </section>
+                </FunctionDoc>
+              </section>
 
-                        {/* Storage */}
-                        <section id="storage" className="section">
-                            <h2><Icon name="storage" />Storage System</h2>
-                            <p>Flexible storage abstraction supporting multiple backends.</p>
+              {/* Storage */}
+              <section id="storage" className="section">
+                <h2>
+                  <Icon name="storage" />
+                  Storage System
+                </h2>
+                <p>Flexible storage abstraction supporting multiple backends.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.storage.defaultStorage.get(path: string)"
-                                desc="Get value from storage using dot-notation path."
-                                code={`const value = Dreddark.storage.defaultStorage.get("user.settings.theme");`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.storage.defaultStorage.get(path: string)"
+                  desc="Get value from storage using dot-notation path."
+                  code={`const value = Dreddark.storage.defaultStorage.get("user.settings.theme");`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.storage.defaultStorage.set(path: string, value: any)"
-                                desc="Set value in storage using dot-notation path."
-                                code={`Dreddark.storage.defaultStorage.set("user.settings.theme", "dark");`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.storage.defaultStorage.set(path: string, value: any)"
+                  desc="Set value in storage using dot-notation path."
+                  code={`Dreddark.storage.defaultStorage.set("user.settings.theme", "dark");`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.storage.defaultStorage.del(path: string)"
-                                desc="Delete value from storage."
-                                code={`Dreddark.storage.defaultStorage.del("user.settings.theme");`}
-                            />
+                <FunctionDoc
+                  name="Dreddark.storage.defaultStorage.del(path: string)"
+                  desc="Delete value from storage."
+                  code={`Dreddark.storage.defaultStorage.del("user.settings.theme");`}
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.storage.createStorage(options: object)"
-                                desc="Create custom storage instance with specific backend."
-                                code={`// Create memory-based storage
+                <FunctionDoc
+                  name="Dreddark.storage.createStorage(options: object)"
+                  desc="Create custom storage instance with specific backend."
+                  code={`
+// Create memory-based storage
 const memStorage = Dreddark.storage.createStorage({
     defaultDatabase: "memory",
     namespace: "MyApp"
 });`}
-                            />
+                />
 
-                            <h3>Available Storage Backends</h3>
-                            <table>
-                                <thead>
-                                    <tr><th>Backend</th><th>Description</th><th>Persistence</th></tr>
-                                </thead>
-                                <tbody>
-                                    <tr><td><code>localstorage</code></td><td>Browser localStorage (default)</td><td>Permanent</td></tr>
-                                    <tr><td><code>sessionstorage</code></td><td>Browser sessionStorage</td><td>Session only</td></tr>
-                                    <tr><td><code>memory</code></td><td>In-memory storage</td><td>Page reload</td></tr>
-                                    <tr><td><code>indexeddb</code></td><td>IndexedDB (async)</td><td>Permanent</td></tr>
-                                </tbody>
-                            </table>
-                        </section>
+                <h3>Available Storage Backends</h3>
+                <table>
+                  <thead>
+                    <tr>
+                      <th>Backend</th>
+                      <th>Description</th>
+                      <th>Persistence</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    <tr>
+                      <td>
+                        <code>localstorage</code>
+                      </td>
+                      <td>Browser localStorage (default)</td>
+                      <td>Permanent</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>sessionstorage</code>
+                      </td>
+                      <td>Browser sessionStorage</td>
+                      <td>Session only</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>memory</code>
+                      </td>
+                      <td>In-memory storage</td>
+                      <td>Page reload</td>
+                    </tr>
+                    <tr>
+                      <td>
+                        <code>indexeddb</code>
+                      </td>
+                      <td>IndexedDB (async)</td>
+                      <td>Permanent</td>
+                    </tr>
+                  </tbody>
+                </table>
+              </section>
 
-                        {/* Utils */}
-                        <section id="utils" className="section">
-                            <h2><Icon name="build" />Utilities</h2>
-                            <p>Helper functions for common tasks.</p>
+              {/* Utils */}
+              <section id="utils" className="section">
+                <h2>
+                  <Icon name="build" />
+                  Utilities
+                </h2>
+                <p>Helper functions for common tasks.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.utils.validateName(name: string)"
-                                desc="Validate a username according to game rules."
-                                code={`const error = Dreddark.utils.validateName(/* username */);
+                <FunctionDoc
+                  name="Dreddark.utils.validateName(name: string)"
+                  desc="Validate a username according to game rules."
+                  code={`
+const error = Dreddark.utils.validateName(/* username */);
 if (error) {
     console.log("Invalid name:", error);
     // Possible errors:
@@ -861,12 +1231,13 @@ if (error) {
 } else {
     console.log("Name is valid!");
 }`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.utils.state(initialData: object)"
-                                desc="Create reactive state object with watchers."
-                                code={`const gameState = Dreddark.utils.state({ score: 0, level: 1 });
+                <FunctionDoc
+                  name="Dreddark.utils.state(initialData: object)"
+                  desc="Create reactive state object with watchers."
+                  code={`
+const gameState = Dreddark.utils.state({ score: 0, level: 1 });
 
 // Watch for changes
 gameState.watch("score", function(newValue, oldValue) {
@@ -879,84 +1250,113 @@ gameState.set("score", 100);
 
 // Get snapshot
 const snapshot = gameState.snapshot();`}
-                            />
-                        </section>
+                />
+              </section>
 
-                        {/* DOM */}
-                        <section id="dom" className="section">
-                            <h2><Icon name="code" />DOM Utilities</h2>
-                            <p>DOM manipulation and waiting helpers.</p>
+              {/* DOM */}
+              <section id="dom" className="section">
+                <h2>
+                  <Icon name="code" />
+                  DOM Utilities
+                </h2>
+                <p>DOM manipulation and waiting helpers.</p>
 
-                            <FunctionDoc 
-                                name="Dreddark.dom.wait(selector: string, options?: object)"
-                                desc="Wait for an element to appear in the DOM."
-                                async
-                                code={`// Wait for element (default 10s timeout)
+                <FunctionDoc
+                  name="Dreddark.dom.wait(selector: string, options?: object)"
+                  desc="Wait for an element to appear in the DOM."
+                  async
+                  code={`
+// Wait for element (default 10s timeout)
 const element = await Dreddark.dom.wait("#my-element");
 
 // Custom timeout
 const element = await Dreddark.dom.wait(".my-class", {
     timeout: 5000
 });`}
-                            />
+                />
 
-                            <FunctionDoc 
-                                name="Dreddark.dom.findTextNodes(root: Element, query: string, options?: object)"
-                                desc="Find text nodes containing specific text (async batched search)."
-                                async
-                            >
-                                <ParamTable params={[
-                                    { name: 'caseSensitive', type: 'Boolean', desc: 'Case-sensitive search (default: false)', isOption: true },
-                                    { name: 'limit', type: 'Number', desc: 'Max results (default: Infinity)', isOption: true },
-                                    { name: 'batchSize', type: 'Number', desc: 'Nodes per frame (default: 250)', isOption: true }
-                                ]} />
-                                <CodeBlock>{`const nodes = await Dreddark.dom.findTextNodes(
+                <FunctionDoc
+                  name="Dreddark.dom.findTextNodes(root: Element, query: string, options?: object)"
+                  desc="Find text nodes containing specific text (async batched search)."
+                  async
+                >
+                  <ParamTable
+                    params={[
+                      {
+                        name: "caseSensitive",
+                        type: "Boolean",
+                        desc: "Case-sensitive search (default: false)",
+                        isOption: true,
+                      },
+                      {
+                        name: "limit",
+                        type: "Number",
+                        desc: "Max results (default: Infinity)",
+                        isOption: true,
+                      },
+                      {
+                        name: "batchSize",
+                        type: "Number",
+                        desc: "Nodes per frame (default: 250)",
+                        isOption: true,
+                      },
+                    ]}
+                  />
+                  <CodeBlock>{`const nodes = await Dreddark.dom.findTextNodes(
     document.body,
     "hello",
     { caseSensitive: false, limit: 10 }
 );`}</CodeBlock>
-                            </FunctionDoc>
-                        </section>
+                </FunctionDoc>
+              </section>
 
-                        {/* Outfit - Deprecated */}
-                        <section id="outfit" className="section">
-                            <h2><Icon name="checkroom" />Outfit API <Badge type="deprecated">DEPRECATED</Badge></h2>
-                            
-                            <WarningBox>
-                                <strong>Warning:</strong> The Outfit API no longer works and should not be used.
-                            </WarningBox>
+              {/* Outfit - Deprecated */}
+              <section id="outfit" className="section">
+                <h2>
+                  <Icon name="checkroom" />
+                  Outfit API <Badge type="deprecated">DEPRECATED</Badge>
+                </h2>
 
-                            <FunctionDoc 
-                                name="Dreddark.outfit.initWsHook(messageKey: string)"
-                                desc="Initialize WebSocket hook (no longer functional)."
-                                deprecated
-                            />
+                <WarningBox>
+                  <strong>Warning:</strong> The Outfit API no longer works and should not be used.
+                </WarningBox>
 
-                            <FunctionDoc 
-                                name="Dreddark.outfit.setOutfit(isInGame: boolean, outfit: object)"
-                                desc="Set player outfit (no longer functional)."
-                                deprecated
-                            />
-                        </section>
-                    </div>
+                <FunctionDoc
+                  name="Dreddark.outfit.initWsHook(messageKey: string)"
+                  desc="Initialize WebSocket hook (no longer functional)."
+                  deprecated
+                />
 
-                    <footer>
-                        <p>
-                            <strong>Simple Dreddark API v2.1.9</strong><br />
-                            Created by Pshsayhi | 
-                            <a href="https://github.com/PshsayhiXD/Simple-Dreddark-API" target="_blank">GitHub Repository</a> | 
-                            <a href="https://drednot.io" target="_blank">drednot.io</a>
-                        </p>
-                        <p style={{ marginTop: '16px', color: '#9aa0a6' }}>
-                            This documentation is auto-generated. For the latest updates, check the GitHub repository.
-                        </p>
-                    </footer>
-                </>
-            );
-        };
+                <FunctionDoc
+                  name="Dreddark.outfit.setOutfit(isInGame: boolean, outfit: object)"
+                  desc="Set player outfit (no longer functional)."
+                  deprecated
+                />
+              </section>
+            </div>
 
+            <footer>
+              <p>
+                <strong>Simple Dreddark API v2.1.9</strong>
+                <br />
+                Created by Pshsayhi |
+                <a href="https://github.com/PshsayhiXD/Simple-Dreddark-API" target="_blank">
+                  GitHub Repository
+                </a>{" "}
+                |
+                <a href="https://drednot.io" target="_blank">
+                  drednot.io
+                </a>
+              </p>
+              <p style={{ marginTop: "16px", color: "#9aa0a6" }}>
+                This documentation is auto-generated. For the latest updates, check the GitHub repository.
+              </p>
+            </footer>
+          </>
+        );
+      };
 
-        ReactDOM.render(<App />, document.getElementById('root'));
+      ReactDOM.render(<App />, document.getElementById("root"));
     </script>
-</body>
+  </body>
 </html>

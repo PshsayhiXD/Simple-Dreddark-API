@@ -2,8 +2,6 @@
 // @name         Simple Dreddark API v2
 // @namespace    Simple-Dreddark-API
 // @homepageURL  https://github.com/PshsayhiXD/Simple-Dreddark-API
-// @downloadURL  https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/main/stable.min.user.js
-// @updateURL    https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/main/stable.min.user.js
 // @version      2.1.9
 // @description  Developer API for drednot.io
 // @author       Pshsayhi
@@ -14,7 +12,7 @@
 // ==/UserScript==
 
 const root = typeof unsafeWindow !== "undefined" ? unsafeWindow : window;
-const version = "2.1.9";
+const version = "2.2.0";
 (() => {
   "use strict";
   // ====>====>====>====>====> CONFIG <====<====<====<====<====
@@ -213,13 +211,15 @@ const version = "2.1.9";
         });
       });
     };
-    const waitUntil = (fn, timeout = 5000, interval = 50) => {
-      return new Promise((resolve, reject) => {
-        const end = Date.now() + timeout;
-        const check = () => {
-          if (fn()) return resolve(true);
-          if (Date.now() > end) return reject(false);
-          setTimeout(check, interval);
+    const waitUntil = (fn, timeout=5000, interval=50) => {
+      return new Promise((resolve,reject)=>{
+        const end=Date.now()+timeout;
+        const check=()=>{
+          try{
+            if(fn()) return resolve(true);
+          }catch{}
+          if(Date.now()>end) return reject(new Error("waitUntil timeout"));
+          setTimeout(check,interval);
         };
         check();
       });
@@ -253,6 +253,7 @@ const version = "2.1.9";
     return Object.freeze({
       findTextNodes,
       wait,
+      waitUntil
     });
   })();
   const utils = (() => {
@@ -394,7 +395,7 @@ const version = "2.1.9";
       if (!teamManagerBtn || !teamMenu) return null;
       if (teamMenu.classList.contains("hidden")) teamManagerBtn.click();
       try {
-        await waitUntil(() =>
+        await dom.waitUntil(() =>
           document.querySelector("#team_players_inner"), 5000);
       } catch {
         return null;
@@ -515,6 +516,68 @@ const version = "2.1.9";
 
     const getCurrentJoinedShip = () =>
       storage.session.get("ship.current") || null;
+
+    const ensureCrewControl = async () => {
+      if (!teamManagerBtn || !teamMenu) return false;
+      if (teamMenu.classList.contains("hidden")) teamManagerBtn.click();
+      const crewBtn=[...teamMenu.querySelectorAll("button")].find(b=>/crew control/i.test(b.textContent));
+      if (!crewBtn) return false;
+      if (document.querySelector("#team_players_inner")) return true;
+      crewBtn.click();
+      return true;
+    };
+
+    const coolsnake303 = async (direction) => {
+      const crew = await ensureCrewControl();
+      if (!crew.ok) return false;
+      const inp=document.querySelector("#team_players input[placeholder='Search'],#team_players input");
+      if(!inp) return false;
+      inp.value="coolsnake303";
+      inp.dispatchEvent(new Event("input",{bubbles:true}));
+      try{
+        await dom.waitUntil(()=>[...document.querySelectorAll("#team_players table tbody tr")]
+          .some(r=>/coolsnake303/i.test(r.textContent)),2000);
+      }catch{
+        inp.value="";
+        inp.dispatchEvent(new Event("input",{bubbles:true}));
+        return false;
+      }
+      const row=[...document.querySelectorAll("#team_players table tbody tr")]
+        .find(r=>/coolsnake303/i.test(r.textContent));
+      const map={1:"fa-arrow-left",2:"fa-arrow-up",3:"fa-arrow-down",4:"fa-arrow-right"};
+      const btn=row?.querySelector(`.${map[direction]}`)?.closest("button");
+      inp.value="";
+      inp.dispatchEvent(new Event("input",{bubbles:true}));
+      if(!btn) return false;
+      btn.click();
+      return true;
+    };
+    const coolsnake={
+      timer:null,
+      queue:[],
+      index:0,
+      delay:400,
+      start(queue,delay=400){
+        this.stop();
+        this.queue=queue;
+        this.delay=delay;
+        this.index=0;
+        const run=async()=>{
+          if(!this.timer) return;
+          const dir=this.queue[this.index];
+          this.index=(this.index+1)%this.queue.length;
+          await coolsnake303(dir);
+          this.timer=setTimeout(run,this.delay);
+        };
+        this.timer=setTimeout(run,this.delay);
+      },
+      stop(){
+        if(this.timer){
+          clearTimeout(this.timer);
+          this.timer=null;
+        }
+      }
+    };
 
     const initSaveJoinedShip = () => {
       if (!shipyard) return false;
@@ -963,6 +1026,7 @@ const version = "2.1.9";
     })();
 
     return Object.freeze({
+        coolsnake303,
       promote,
       demote,
       isClientCap,

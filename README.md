@@ -47,4 +47,4 @@ Dreddark.version // "2.1.9"
 ```
 
 ## Document
-Soon.
+https://pshsayhixd.github.io/Simple-Dreddark-API/

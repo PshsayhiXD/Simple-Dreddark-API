@@ -420,20 +420,6 @@ const version = "2.2.0";
       return true;
     };
 
-    const join = async (id) => {
-      try {
-        await dom.wait(".shipyard-item .sy-id");
-      } catch {
-        return false;
-      }
-      const items = document.querySelectorAll(".shipyard-item .sy-id");
-      const node = [...items].find((e) => e.textContent.trim() === `{${id}}`);
-      const shipNode = node?.closest(".shipyard-item");
-      if (!shipNode) return false;
-      shipNode.click();
-      return true;
-    };
-
     const getShipFromLink = async (link, token = "fZEBE7fIFigqHKHPHiAzp0SW") => {
       try {
         const res = await fetch(link, {
@@ -467,6 +453,54 @@ const version = "2.2.0";
       } catch {
         return {};
       }
+    };
+    const parseInvite = (invite) => {
+      if (!invite) return null;
+      const v = invite.trim();
+      const m1 = v.match(/^https?:\/\/(?:test\.)?drednot\.io\/invite\/([a-z0-9_-]+)$/i);
+      if (m1) return {
+        code: m1[1]
+      };
+      const m2 = v.match(/^(?:testdrednot|drednot):([a-z0-9_-]+)$/i);
+      if (m2) return {
+        code: m2[1]
+      };
+      if (/^[a-z0-9_-]+$/i.test(v)) return {
+        code: v
+      };
+      return null;
+    };
+
+    const join = async (id) => {
+      try {
+        await dom.wait(".shipyard-item .sy-id");
+      } catch {
+        return false;
+      }
+      const items = document.querySelectorAll(".shipyard-item .sy-id");
+      const node = [...items].find((e) => e.textContent.trim() === `{${id}}`);
+      const shipNode = node?.closest(".shipyard-item");
+      if (!shipNode) return false;
+      shipNode.click();
+      return true;
+    };
+
+    const joinWithInvite = async (invite) => {
+      const p = parseInvite(invite);
+      if (!p) return false;
+      const servers = ["drednot.io", "test.drednot.io"];
+      for (const s of servers) {
+        const link = `https://${s}/invite/${p.code}`;
+        const ship = await getShipFromLink(link);
+        if (ship?.valid) {
+          history.replaceState(null, "", link);
+          return {
+            server: s,
+            code: p.code
+          };
+        }
+      }
+      return false;
     };
 
     const fetchShipList = async (token = "fZEBE7fIFigqHKHPHiAzp0SW") => {

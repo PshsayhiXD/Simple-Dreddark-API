@@ -807,10 +807,17 @@ Dreddark.ship.coolsnakeAuto.start([1,4], 250);`}</CodeBlock>
 }`}</CodeBlock>
 
                 <FunctionDoc
-                  name="Dreddark.ship.join(shipCode: string)"
-                  desc="Join a ship by invite code."
+                  name="Dreddark.ship.join(shipId: string)"
+                  desc="Join a ship using DOM by ship id."
                   async
                   code={`await Dreddark.ship.join(/* ship code */);`}
+                />
+
+                <FunctionDoc
+                  name="Dreddark.ship.joinWithInvite(invite: string)"
+                  desc="Join a ship by invite code."
+                  async
+                  code={`await Dreddark.ship.joinWithInvite(/* ship code */);`}
                 />
 
                 <FunctionDoc

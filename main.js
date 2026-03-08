@@ -1060,14 +1060,17 @@ const version = "2.2.0";
     })();
 
     return Object.freeze({
-        coolsnake303,
+      coolsnake303,
+      coolsnake,
       promote,
       demote,
       isClientCap,
       getAllShipPlayer,
       getUserContext,
       applyRank,
+      ensureCrewControl,
       join,
+      joinWithInvite,
       getShipFromLink,
       fetchShipList,
       parseShipData,

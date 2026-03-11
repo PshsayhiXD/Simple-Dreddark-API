@@ -1322,6 +1322,12 @@ const version = "2.2.0";
     const cdNs = "persistCooldown";
     const now = () => Date.now();
     const error = (m) => Dreddark.chat.send(`error: ${m}`);
+
+    // auto-complete
+    let _currentRank = 0;
+    const acMap = new Map();
+    let ACHooked = false;
+
     events.on("chat", (e) => {
       for (const name in map) {
         const c = map[name];
@@ -1388,20 +1394,95 @@ const version = "2.2.0";
         return;
       }
     });
-    return Object.freeze({
-      register(name, handler) {
-        map[name] = handler;
+    events.on("chat", (e) => {
+      if (e.isOwn) _currentRank = rankValue[e.role] ?? 0;
+    });
+    const ACHook = async () => {
+      if (ACHooked) return;
+      ACHooked = true;
+      let chatInp, autocomplete;
+      try {
+        chatInp      = await dom.wait("#chat-input");
+        autocomplete = await dom.wait("#chat-autocomplete");
+      } catch (e) {
+      debug.error("autoComplete", "could not find chat elements", e); // reuses: debug
+      return;
+    }
+    chatInp.addEventListener("input", () => {
+      const val = chatInp.value;
+      const matches = [...acMap.values()]
+      .filter(entry => {
+        if (entry.trigger && !val.startsWith(entry.trigger)) return false;
+        if (typeof entry.visible === "function" && !entry.visible(val)) return false;
+        if (entry.rolePermission && _currentRank < (rankValue[entry.rolePermission] ?? 0)) return false;
+        return true;
+      })
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+      if (!matches.length) return;
+      autocomplete.innerHTML = "";
+      for (const entry of matches) {
+        const resolvedCmd = typeof entry.cmd === "function"
+        ? entry.cmd(val)
+        : (entry.cmd ?? val);
+        const p = document.createElement("p");
+        p.dataset.cmd = resolvedCmd;
+        p.textContent = entry.label;
+        if (entry.description) {
+          const hint = document.createElement("span");
+          hint.style.cssText = "opacity:.5;font-size:.85em;margin-left:6px";
+          hint.textContent = entry.description;
+          p.appendChild(hint);
+        }
+        p.addEventListener("click", () => {
+          if (entry.once) acMap.delete(entry.label);
+          autocomplete.style.display = "none";
+          autocomplete.innerHTML = "";
+          if (entry.runOnClick) {
+            chatInp.value = "";
+            if (typeof entry.onExecute === "function") {
+              try {
+                entry.onExecute(resolvedCmd, val);
+              } catch (e) {
+                debug.error("autoComplete", "onExecute threw", e); // reuses: debug
+              }
+            } else chat.send(resolvedCmd);
+          } else {
+            chatInp.value = resolvedCmd;
+            chatInp.dispatchEvent(new Event("input", { bubbles: true }));
+            chatInp.focus();
+          }
+        });
+        autocomplete.appendChild(p);
+      }
+      autocomplete.style.display = matches.length ? "" : "none";
+    });
+  };
+  return Object.freeze({
+    register(name, handler) {
+      map[name] = handler;
+      return true;
+    },
+    setDefaultPrefix(p) {
+      if (typeof p === "string" && p.length) defaultCommandPrefix = p;
+      return p;
+    },
+    getDefaultPrefix() {
+      return defaultCommandPrefix;
+    },
+    registerCommandAutoComplete(label, opts = {}) {
+        if (typeof label !== "string" || !label)
+          throw new Error("registerCommandAutoComplete: label must be a non-empty string");
+        if (opts.rolePermission && !(opts.rolePermission in rankValue))
+          throw new Error(`registerCommandAutoComplete: invalid rolePermission "${opts.rolePermission}". must be one of: ${Object.keys(rankValue).filter(k => isNaN(k)).join(", ")}`);
+        acMap.set(label, { label, ...opts });
+        ACHook();
         return true;
       },
-      setDefaultPrefix(p) {
-        if (typeof p === "string" && p.length) defaultCommandPrefix = p;
-        return p;
-      },
-      getDefaultPrefix() {
-        return defaultCommandPrefix;
+      unregisterCommandAutoComplete(label) {
+        return acMap.delete(label);
       },
     });
-  })();
+})();
   const mission = (() => {
     const missionStartTs = 1756201238;
     const openDuration = 15 * 60;

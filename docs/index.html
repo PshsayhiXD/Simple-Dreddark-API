@@ -1,0 +1,1745 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Dreddark API v2 Documentation</title>
+    <!-- React & Babel -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/fuse.js@6.6.2"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/livecodes/livecodes.umd.js"></script>
+
+    <script>
+      fetch("https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/master/stable.min.js")
+        .then(r => r.text())
+        .then(code => {
+          const s = document.createElement("script");
+          s.textContent = code;
+          document.documentElement.appendChild(s);
+          window.dispatchEvent(new Event("dreddark-api-ready"));
+        })
+        .catch(err => {
+          console.error("Failed to load Dreddark API:", err);
+        });
+    </script>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap"
+      rel="stylesheet"
+    />
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css" rel="stylesheet" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family: "Roboto", sans-serif;
+        line-height: 1.6;
+        color: #24292e;
+        background: #f6f8fa;
+        transition: background-color 0.3s, color 0.3s;
+      }
+      body.dark {
+        background: #0d1117;
+        color: #c9d1d9;
+      }
+
+      .header {
+        background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+        color: white;
+        padding: 48px 24px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header-content {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .header h1 {
+        font-size: 2.5rem;
+        font-weight: 300;
+        margin-bottom: 8px;
+      }
+      .version {
+        display: inline-block;
+        background: rgba(255, 255, 255, 0.2);
+        padding: 4px 12px;
+        border-radius: 16px;
+        font-size: 0.875rem;
+        margin-left: 12px;
+      }
+      .header p {
+        font-size: 1.125rem;
+        opacity: 0.9;
+        margin-top: 16px;
+      }
+
+      .nav {
+        background: white;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
+        position: sticky;
+        top: 0;
+        z-index: 100;
+      }
+      body.dark .nav {
+        background: #161b22;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      }
+      .nav-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 24px;
+        display: flex;
+        gap: 24px;
+        overflow-x: auto;
+      }
+      .nav a {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        padding: 16px 0;
+        color: #5f6368;
+        text-decoration: none;
+        border-bottom: 2px solid transparent;
+        transition: all 0.2s;
+        white-space: nowrap;
+      }
+      body.dark .nav a {
+        color: #8b949e;
+      }
+      .nav a:hover {
+        color: #1a73e8;
+        border-bottom-color: #1a73e8;
+      }
+      body.dark .nav a:hover {
+        color: #58a6ff;
+        border-bottom-color: #58a6ff;
+      }
+
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 40px 24px;
+      }
+      .section {
+        background: white;
+        border-radius: 8px;
+        padding: 32px;
+        margin-bottom: 24px;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+        transition: opacity 0.2s;
+      }
+      body.dark .section {
+        background: #161b22;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+      }
+      .section.hidden {
+        display: none;
+      }
+      .section h2 {
+        font-size: 1.75rem;
+        font-weight: 400;
+        margin-bottom: 24px;
+        color: #1a73e8;
+        display: flex;
+        align-items: center;
+        gap: 12px;
+      }
+      body.dark .section h2 {
+        color: #58a6ff;
+      }
+      .section h3 {
+        font-size: 1.25rem;
+        font-weight: 500;
+        margin: 32px 0 16px 0;
+        color: #202124;
+      }
+      body.dark .section h3 {
+        color: #e6edf3;
+      }
+
+      .function-bg {
+        border-left: 4px solid #e8f0fe;
+        padding: 20px 24px;
+        margin: 24px 0;
+        background: #f8f9fa;
+        border-radius: 4px;
+        position: relative;
+      }
+      body.dark .function-bg {
+        background: #1f242b;
+        border-left-color: #30363d;
+      }
+      .function-name {
+        font-family: "Roboto Mono", monospace;
+        font-size: 1.125rem;
+        font-weight: 500;
+        color: #1a73e8;
+        margin-bottom: 12px;
+      }
+      body.dark .function-name {
+        color: #58a6ff;
+      }
+      .function-desc {
+        color: #5f6368;
+        margin-bottom: 16px;
+      }
+      body.dark .function-desc {
+        color: #8b949e;
+      }
+
+      pre[class*="language-"] {
+        margin: 16px 0 !important;
+        border-radius: 4px !important;
+        position: relative;
+      }
+      .code-block-wrapper {
+        position: relative;
+      }
+      .copy-button {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border-radius: 4px;
+        padding: 4px 8px;
+        font-size: 12px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        z-index: 10;
+        opacity: 0.7;
+        transition: opacity 0.2s;
+      }
+      .copy-button:hover {
+        opacity: 1;
+        background: rgba(255, 255, 255, 0.2);
+      }
+      .copy-button .material-icons {
+        font-size: 16px;
+      }
+
+      code[class*="language-"],
+      pre[class*="language-"] {
+        text-shadow: none !important;
+        line-height: 1.6 !important;
+      }
+
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin: 16px 0;
+      }
+      th,
+      td {
+        padding: 12px;
+        text-align: left;
+        border-bottom: 1px solid #e8eaed;
+      }
+      body.dark th,
+      body.dark td {
+        border-bottom-color: #30363d;
+      }
+      th {
+        background: #f1f3f4;
+        font-weight: 500;
+        color: #5f6368;
+      }
+      body.dark th {
+        background: #1f242b;
+        color: #8b949e;
+      }
+
+      code:not([class*="language-"]) {
+        background: #f1f3f4;
+        padding: 2px 6px;
+        border-radius: 3px;
+        font-family: "Roboto Mono", monospace;
+        font-size: 0.875rem;
+      }
+      body.dark code:not([class*="language-"]) {
+        background: #1f242b;
+        color: #e6edf3;
+      }
+
+      .badge {
+        display: inline-block;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 0.75rem;
+        font-weight: 500;
+        margin-left: 8px;
+      }
+      .badge-async {
+        background: #e8f0fe;
+        color: #1967d2;
+      }
+      .badge-deprecated {
+        background: #fce8e6;
+        color: #c5221f;
+      }
+
+      .info {
+        background: #e8f0fe;
+        border-left: 4px solid #1a73e8;
+        padding: 16px;
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+      body.dark .info {
+        background: #1f242b;
+        border-left-color: #58a6ff;
+      }
+      .warning {
+        background: #fef7e0;
+        border-left: 4px solid #f9ab00;
+        padding: 16px;
+        border-radius: 4px;
+        margin: 16px 0;
+      }
+      body.dark .warning {
+        background: #1f242b;
+        border-left-color: #f9ab00;
+      }
+      .material-icons {
+        vertical-align: middle;
+        margin-right: 8px;
+        font-size: 20px;
+      }
+
+      footer {
+        background: white;
+        border-top: 1px solid #e8eaed;
+        padding: 32px 24px;
+        margin-top: 48px;
+        text-align: center;
+        color: #5f6368;
+      }
+      body.dark footer {
+        background: #161b22;
+        border-top-color: #30363d;
+        color: #8b949e;
+      }
+      footer a {
+        color: #1a73e8;
+        text-decoration: none;
+      }
+      body.dark footer a {
+        color: #58a6ff;
+      }
+      footer a:hover {
+        text-decoration: underline;
+      }
+
+      .app-layout { display: flex; min-height: 100vh; }
+      .sidebar { width: 280px; background: white; border-right: 1px solid #e0e0e0; position: fixed; left: 0; top: 0; bottom: 0; overflow-y: auto; z-index: 100; box-shadow: 2px 0 8px rgba(0, 0, 0, 0.05); }
+      body.dark .sidebar { background: #161b22; border-right-color: #30363d; }
+      .sidebar-header { padding: 24px 20px; background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%); color: white; position: sticky; top: 0; z-index: 10; }
+      .sidebar-header h1 { font-size: 1.25rem; font-weight: 500; margin-bottom: 4px; }
+      .sidebar-version { display: inline-block; background: rgba(255, 255, 255, 0.25); padding: 2px 8px; border-radius: 12px; font-size: 0.75rem; font-weight: 500; }
+      .sidebar-nav { padding: 16px 0; }
+      .nav-section { margin-bottom: 24px; }
+      .nav-section-title { padding: 8px 20px; font-size: 0.75rem; font-weight: 500; color: #5f6368; text-transform: uppercase; letter-spacing: 0.8px; }
+      body.dark .nav-section-title { color: #8b949e; }
+      .nav-item { display: flex; align-items: center; padding: 12px 20px; color: #5f6368; text-decoration: none; transition: all 0.2s; cursor: pointer; border-left: 3px solid transparent; }
+      body.dark .nav-item { color: #8b949e; }
+      .nav-item:hover { background: #f1f3f4; color: #1a73e8; }
+      body.dark .nav-item:hover { background: #1f242b; color: #58a6ff; }
+      .nav-item.active { background: #e8f0fe; color: #1967d2; border-left-color: #1967d2; font-weight: 500; }
+      body.dark .nav-item.active { background: #1f242b; color: #58a6ff; border-left-color: #58a6ff; }
+      .nav-item .material-icons { margin-right: 12px; font-size: 20px; }
+      .nav-external { border-top: 1px solid #e0e0e0; margin-top: 8px; padding-top: 8px; }
+      body.dark .nav-external { border-top-color: #30363d; }
+      .main-content { flex: 1; margin-left: 280px; }
+      .header, .nav { display: none; }
+      @media (max-width: 768px) { .sidebar { transform: translateX(-280px); } .main-content { margin-left: 0; } }
+
+      .search-container {
+        padding: 16px 20px;
+        border-bottom: 1px solid #e0e0e0;
+      }
+      body.dark .search-container {
+        border-bottom-color: #30363d;
+      }
+      .search-input {
+        width: 100%;
+        padding: 8px 12px;
+        border: 1px solid #e0e0e0;
+        border-radius: 20px;
+        font-family: "Roboto", sans-serif;
+        background: #f1f3f4;
+      }
+      body.dark .search-input {
+        background: #1f242b;
+        border-color: #30363d;
+        color: #e6edf3;
+      }
+      .search-input:focus {
+        outline: none;
+        border-color: #1a73e8;
+      }
+      body.dark .search-input:focus {
+        border-color: #58a6ff;
+      }
+
+      .theme-toggle {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 12px 20px;
+        border-top: 1px solid #e0e0e0;
+        margin-top: 8px;
+      }
+      body.dark .theme-toggle {
+        border-top-color: #30363d;
+      }
+      .theme-toggle button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        color: #5f6368;
+        font-size: 0.875rem;
+      }
+      body.dark .theme-toggle button {
+        color: #8b949e;
+      }
+
+      @keyframes fadeInUp {
+        from {
+          opacity: 0;
+          transform: translateY(20px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+
+      .section {
+        animation: fadeInUp 0.6s ease-out;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .section:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+      }
+      body.dark .section:hover {
+        box-shadow: 0 8px 16px rgba(0,0,0,0.5);
+      }
+
+      .function-bg {
+        transition: border-left-color 0.2s, background 0.2s;
+      }
+      .function-bg:hover {
+        border-left-color: #1a73e8;
+      }
+      body.dark .function-bg:hover {
+        border-left-color: #58a6ff;
+      }
+
+      .nav-item {
+        transition: background 0.2s, color 0.2s, border-left-color 0.2s, transform 0.1s;
+      }
+      .nav-item:active {
+        transform: scale(0.98);
+      }
+
+      .copy-button {
+        transition: opacity 0.2s, background 0.2s;
+      }
+
+      .playground {
+        margin: 24px 0;
+        border-radius: 8px;
+        overflow: hidden;
+        border: 1px solid #e0e0e0;
+      }
+      body.dark .playground {
+        border-color: #30363d;
+      }
+      .playground-editor {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        font-family: 'Roboto Mono', monospace;
+        font-size: 14px;
+        padding: 16px;
+        max-height: 300px;
+        overflow: auto;
+      }
+      .playground-preview {
+        background: white;
+        padding: 16px;
+        border-top: 1px solid #e0e0e0;
+      }
+      body.dark .playground-preview {
+        background: #0d1117;
+        border-top-color: #30363d;
+      }
+      .playground-preview pre {
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+const { useState, useEffect, useRef } = React;
+
+const useLiveCodes = () => {
+  const [isReady, setIsReady] = useState(false);
+
+  useEffect(() => {
+    if (window.livecodes) {
+      setIsReady(true);
+      return;
+    }
+
+    const checkInterval = setInterval(() => {
+      if (window.livecodes) {
+        setIsReady(true);
+        clearInterval(checkInterval);
+      }
+    }, 100);
+
+    const timeout = setTimeout(() => {
+      clearInterval(checkInterval);
+      console.error('LiveCodes failed to load');
+    }, 10000);
+
+    return () => {
+      clearInterval(checkInterval);
+      clearTimeout(timeout);
+    };
+  }, []);
+
+  return isReady ? window.livecodes : null;
+};
+      const Icon = ({ name }) => <span className="material-icons">{name}</span>;
+
+      const Badge = ({ type, children }) => (
+        <span className={`badge badge-${type}`}>{children}</span>
+      );
+
+      const CopyButton = ({ text }) => {
+        const [copied, setCopied] = useState(false);
+        const handleCopy = () => {
+          navigator.clipboard.writeText(text).then(() => {
+            setCopied(true);
+            setTimeout(() => setCopied(false), 2000);
+          });
+        };
+        return (
+          <button className="copy-button" onClick={handleCopy}>
+            <Icon name={copied ? "check" : "content_copy"} />
+            {copied ? "Copied!" : "Copy"}
+          </button>
+        );
+      };
+
+      const CodeBlock = ({ children, language = "javascript" }) => {
+        useEffect(() => {
+          Prism.highlightAll();
+        }, [children]);
+        return (
+          <div className="code-block-wrapper">
+            <CopyButton text={children.trim()} />
+            <pre>
+              <code className={`language-${language}`}>{children.trim()}</code>
+            </pre>
+          </div>
+        );
+      };
+
+      const FunctionDoc = ({ name, desc, code, async, deprecated, children }) => (
+        <div className="function-bg">
+          <div className="function-name">
+            {name}
+            {async && <Badge type="async">async</Badge>}
+            {deprecated && <Badge type="deprecated">DEPRECATED</Badge>}
+          </div>
+          {desc && <div className="function-desc">{desc}</div>}
+          {code && <CodeBlock>{code}</CodeBlock>}
+          {children}
+        </div>
+      );
+
+      const ParamTable = ({ params }) => (
+        <table>
+          <thead>
+            <tr>
+              <th>{params[0]?.isOption ? "Option" : params[0]?.isHandler ? "Handler Property" : "Parameter"}</th>
+              <th>Type</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {params.map((p, i) => (
+              <tr key={i}>
+                <td><code>{p.name}</code></td>
+                <td>{p.type}</td>
+                <td>{p.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+
+      const EventTable = ({ events }) => (
+        <table>
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Payload</th>
+              <th>Description</th>
+            </tr>
+          </thead>
+          <tbody>
+            {events.map((e, i) => (
+              <tr key={i}>
+                <td><code>{e.name}</code></td>
+                <td><code>{e.payload}</code></td>
+                <td>{e.desc}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      );
+
+      const InfoBox = ({ children }) => (
+        <div className="info">
+          <Icon name="info" />
+          {children}
+        </div>
+      );
+
+      const WarningBox = ({ children }) => (
+        <div className="warning">
+          <Icon name="warning" />
+          {children}
+        </div>
+      );
+
+const Playground = ({ initialCode, scope = {} }) => {
+  const livecodes = useLiveCodes();
+  const containerRef = useRef(null);
+  const playgroundRef = useRef(null);
+  const [apiReady, setApiReady] = useState(false);
+  const [apiCode, setApiCode] = useState('');
+
+  useEffect(() => {
+    if (window.Dreddark) {
+      setApiReady(true);
+      fetch("https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/master/stable.min.js")
+        .then(r => r.text())
+        .then(code => setApiCode(code))
+        .catch(err => console.error("Failed to fetch API code:", err));
+      return;
+    }
+
+    const handler = () => {
+      setApiReady(true);
+      fetch("https://raw.githubusercontent.com/PshsayhiXD/Simple-Dreddark-API/master/stable.min.js")
+        .then(r => r.text())
+        .then(code => setApiCode(code))
+        .catch(err => console.error("Failed to fetch API code:", err));
+    };
+    window.addEventListener("dreddark-api-ready", handler);
+
+    return () => window.removeEventListener("dreddark-api-ready", handler);
+  }, []);
+
+  useEffect(() => {
+    if (!livecodes || !containerRef.current || playgroundRef.current || !apiReady || !apiCode) return;
+
+    const initPlayground = async () => {
+      try {
+        const playground = await livecodes.createPlayground(containerRef.current, {
+          config: {
+            markup: {
+              language: 'html',
+              content: `<div id="output"></div>`
+            },
+            style: {
+              language: 'css',
+              content: 'body { font-family: monospace; padding: 10px; }'
+            },
+            script: {
+              language: 'javascript',
+              content: `// Dreddark API loaded
+${apiCode}
+
+// User code
+${initialCode || ''}
+`
+            },
+            tools: {
+              enabled: ['console'],
+              active: 'console',
+              status: 'open'
+            }
+          },
+          loading: 'eager'
+        });
+        playgroundRef.current = playground;
+      } catch (error) {
+        console.error('Failed to create LiveCodes playground:', error);
+      }
+    };
+
+    initPlayground();
+
+    return () => {
+      if (playgroundRef.current && playgroundRef.current.destroy) {
+        playgroundRef.current.destroy();
+      }
+    };
+  }, [livecodes, initialCode, apiReady, apiCode]);
+
+  if (!livecodes || !apiReady || !apiCode) {
+    return <div style={{ padding: '20px', textAlign: 'center' }}>
+      Loading playground{!apiReady ? ' (waiting for Dreddark API)' : !apiCode ? ' (loading API code)' : ''}...
+    </div>;
+  }
+
+  return (
+    <div 
+      ref={containerRef} 
+      className="playground"
+      style={{ height: '400px', width: '100%', minHeight: '400px' }}
+    />
+  );
+};
+
+      const SearchBar = ({ onSearch }) => {
+        const [query, setQuery] = useState('');
+        const handleChange = (e) => {
+          setQuery(e.target.value);
+          onSearch(e.target.value);
+        };
+        return (
+          <div className="search-container">
+            <input
+              type="text"
+              className="search-input"
+              placeholder="search documentation..."
+              value={query}
+              onChange={handleChange}
+            />
+          </div>
+        );
+      };
+
+      const ThemeToggle = () => {
+        const [dark, setDark] = useState(false);
+        useEffect(() => {
+          if (dark) document.body.classList.add('dark');
+          else document.body.classList.remove('dark');
+        }, [dark]);
+        return (
+          <div className="theme-toggle">
+            <span>Dark Mode</span>
+            <button onClick={() => setDark(!dark)}>
+              <Icon name={dark ? "light_mode" : "dark_mode"} />
+              {dark ? "Light" : "Dark"}
+            </button>
+          </div>
+        );
+      };
+
+      const App = () => {
+        const navItems = [
+          { id: "start", icon: "play_arrow", label: "Getting Started" },
+          { id: "debug", icon: "bug_report", label: "Debug" },
+          { id: "events", icon: "event", label: "Events" },
+          { id: "chat", icon: "chat", label: "Chat" },
+          { id: "ship", icon: "directions_boat", label: "Ship" },
+          { id: "client", icon: "person", label: "Client" },
+          { id: "commands", icon: "terminal", label: "Commands" },
+          { id: "mission", icon: "assignment", label: "Mission" },
+          { id: "pvp", icon: "sports_mma", label: "PvP" },
+          { id: "storage", icon: "storage", label: "Storage" },
+          { id: "utils", icon: "build", label: "Utils" },
+          { id: "dom", icon: "code", label: "DOM" },
+          { id: "outfit", icon: "checkroom", label: "Outfit (Deprecated)" },
+        ];
+
+        const [activeSection, setActiveSection] = useState("start");
+        const [searchQuery, setSearchQuery] = useState('');
+        const [fuse, setFuse] = useState(null);
+
+        useEffect(() => {
+          const sections = Array.from(document.querySelectorAll('.section'));
+          const sectionData = sections.map(section => ({
+            id: section.id,
+            title: section.querySelector('h2')?.textContent || '',
+            content: section.textContent || ''
+          }));
+          const fuseInstance = new Fuse(sectionData, {
+            keys: ['title', 'content'],
+            threshold: 0.4,
+            includeScore: true,
+          });
+          setFuse(fuseInstance);
+        }, []);
+
+        useEffect(() => {
+          const sections = document.querySelectorAll('.section');
+          if (!fuse || searchQuery.trim() === '') {
+            sections.forEach(section => section.classList.remove('hidden'));
+            return;
+          }
+          const results = fuse.search(searchQuery);
+          const matchingIds = new Set(results.map(r => r.item.id));
+          sections.forEach(section => {
+            if (matchingIds.has(section.id)) {
+              section.classList.remove('hidden');
+            } else {
+              section.classList.add('hidden');
+            }
+          });
+        }, [searchQuery, fuse]);
+
+        const scrollToSection = (id) => {
+          const element = document.getElementById(id);
+          if (element) {
+            element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            setActiveSection(id);
+          }
+        };
+
+        useEffect(() => {
+          const observer = new IntersectionObserver(
+            (entries) => {
+              entries.forEach((entry) => {
+                if (entry.isIntersecting) {
+                  setActiveSection(entry.target.id);
+                }
+              });
+            },
+            { threshold: 0.1, rootMargin: '-100px 0px -60% 0px' }
+          );
+          document.querySelectorAll('.section[id]').forEach((section) => {
+            observer.observe(section);
+          });
+          return () => observer.disconnect();
+        }, []);
+
+        useEffect(() => {
+          const sectionLabel = navItems.find(i => i.id === activeSection)?.label || 'Documentation';
+          document.title = `Dreddark API - ${sectionLabel}`;
+        }, [activeSection, navItems]);
+
+        return (
+          <div className="app-layout">
+            {}
+            <aside className="sidebar">
+              <div className="sidebar-header">
+                <h1>Dreddark API</h1>
+                <span className="sidebar-version">v2.2.1</span>
+              </div>
+              <SearchBar onSearch={setSearchQuery} />
+              <nav className="sidebar-nav">
+                <div className="nav-section">
+                  <div className="nav-section-title">Documentation</div>
+                  {navItems.map((item) => (
+                    <a
+                      key={item.id}
+                      className={`nav-item ${activeSection === item.id ? 'active' : ''}`}
+                      onClick={() => scrollToSection(item.id)}
+                    >
+                      <Icon name={item.icon} />
+                      {item.label}
+                    </a>
+                  ))}
+                </div>
+                <div className="nav-section nav-external">
+                  <div className="nav-section-title">More</div>
+                  <a href="changelog.html" className="nav-item">
+                    <Icon name="history" />
+                    Changelog
+                  </a>
+                </div>
+                <ThemeToggle />
+              </nav>
+            </aside>
+
+            {}
+            <main className="main-content">
+              {}
+              <div className="header">
+                <div className="header-content">
+                  <h1>Simple Dreddark API v2 <span className="version">v2.2.1</span></h1>
+                  <p>Developer API for drednot.io - A comprehensive JavaScript library for game interaction</p>
+                </div>
+              </div>
+              <nav className="nav">
+                <div className="nav-content">
+                  {navItems.map((item) => (
+                    <a key={item.id} href={`#${item.id}`}>
+                      <Icon name={item.icon} />
+                      {item.label}
+                    </a>
+                  ))}
+                  <a href="changelog.html"><Icon name="history" />Changelog</a>
+                </div>
+              </nav>
+
+              <div className="container">
+                {}
+                <section id="start" className="section">
+                  <h2><Icon name="play_arrow" />Getting Started</h2>
+                  <p>The Dreddark API is globally accessible via the <code>Dreddark</code> object after the userscript loads.</p>
+                  <CodeBlock>{`// Access the API
+const api = Dreddark;
+// Check version
+console.log(api.version); // "2.2.1"
+// Use a plugin
+Dreddark.use(function(api) {
+    api.chat.send("Hello from plugin!");
+});`}</CodeBlock>
+                  <InfoBox><strong>Note:</strong> All examples assume the API is loaded and available.</InfoBox>
+                </section>
+
+                {}
+                <section id="debug" className="section">
+                  <h2><Icon name="bug_report" />Debug</h2>
+                  <p>Styled console logging system with Material Design aesthetics.</p>
+                  <FunctionDoc
+                    name="Dreddark.debug.log(moduleName: string, ...args: any)"
+                    desc="Log a message with optional module name."
+                    code={`// Basic log
+Dreddark.debug.log("MyModule", "Message", data);
+// Without module name
+Dreddark.debug.log("Just a message");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.debug.warn(moduleName: string, ...args: any)"
+                    desc="Log a warning message."
+                    code={`Dreddark.debug.warn("MyModule", "Warning message");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.debug.error(moduleName: string, ...args: any)"
+                    desc="Log an error message."
+                    code={`Dreddark.debug.error("MyModule", "Error occurred", error);`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.debug.group(moduleName: string, label: string)"
+                    desc="Start a console group."
+                    code={`Dreddark.debug.group("MyModule", "Processing Items");
+// ... grouped logs ...
+Dreddark.debug.groupEnd();`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.debug.groupCollapsed(moduleName: string, label: string)"
+                    desc="Start a collapsed console group."
+                  />
+                  <FunctionDoc name="Dreddark.debug.groupEnd()" desc="End the current console group." />
+                  <FunctionDoc
+                    name="Dreddark.debug.module(name: string)"
+                    desc="Create a module-specific logger."
+                    code={`const logger = Dreddark.debug.module("MyModule");
+logger.log("Info message");
+logger.warn("Warning");
+logger.error("Error");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.debug.banner(title: string)"
+                    desc="Display a styled banner message."
+                    code={`Dreddark.debug.banner("SYSTEM READY");`}
+                  />
+                  <h3>Configuration</h3>
+                  <ParamTable
+                    params={[
+                      { name: "debug.enabled", type: "Boolean", desc: "Enable/disable debug output (default: true)" },
+                      { name: "debug.showMeta", type: "Boolean", desc: "Show metadata (source, timestamp) in logs (default: false)" },
+                      { name: "debug.useGroups", type: "Boolean", desc: "Enable console grouping (default: true)" },
+                    ]}
+                  />
+                  <h3>Live Debug Example</h3>
+                  <Playground initialCode={`// Try debug logging
+Dreddark.debug.log("Playground", "This is a test");
+Dreddark.debug.warn("Playground", "Warning message");
+Dreddark.debug.error("Playground", "Error!");`} />
+                </section>
+
+                {}
+                <section id="events" className="section">
+                  <h2><Icon name="event" />Events</h2>
+                  <p>Simple event bus for inter-component communication.</p>
+                  <FunctionDoc
+                    name="Dreddark.events.on(eventType: string, callback: function)"
+                    desc="Listen to an event."
+                    code={`Dreddark.events.on("chat", function(data) {
+    console.log("Chat message:", data.message);
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.events.emit(eventType: string, payload: any)"
+                    desc="Emit an event with optional payload."
+                    code={`Dreddark.events.emit("customEvent", { /* data */ });`}
+                  />
+                  <h3>Available Events</h3>
+                  <EventTable
+                    events={[
+                      { name: "chat", payload: "{user, role, message, badges, isOwn, ...}", desc: "Chat message received" },
+                      { name: "mission", payload: "{mission, location, isOpen, time, ...}", desc: "Mission announcement. time is minutes (number) or null" },
+                      { name: "warning", payload: "{raw, timestamp, ...}", desc: "System warning" },
+                      { name: "roleChange", payload: "{action, targetUser, byUser, newRole, isOwn, isOwnAction, ...}", desc: "Player rank changed" },
+                      { name: "shipJoin", payload: "{user, role, badges, isOwn, ...}", desc: "Player joined ship" },
+                      { name: "shipLeave", payload: "{user, role, badges, isOwn, ...}", desc: "Player left ship" },
+                      { name: "log", payload: "{action, method, target, actor, ...}", desc: "Ship log entry" },
+                      { name: "log:action", payload: "{action, method, target, user, timestamp, raw}", desc: "Simplified log action" },
+                    ]}
+                  />
+                </section>
+
+                {}
+                <section id="chat" className="section">
+                  <h2><Icon name="chat" />Chat</h2>
+                  <p>Send messages and listen to chat events.</p>
+                  <FunctionDoc
+                    name="Dreddark.chat.send(...args: any)"
+                    desc="Send a chat message (rate-limited to prevent spam)."
+                    code={`// Send single message
+Dreddark.chat.send("Hello world!");
+// Concatenate multiple arguments
+Dreddark.chat.send("Score:", 100, "points");`}
+                  >
+                    <InfoBox>Messages are queued and sent with a 1-second delay between each to prevent rate limiting.</InfoBox>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.chat.append(...items: object[])"
+                    desc="Append custom messages to chat display without sending to server."
+                    code={`Dreddark.chat.append({
+    user: "System",
+    text: "Custom notification",
+    role: "Admin", /* support custom roles */
+    badge: {
+        image: /* badge image URL */,
+        tooltip: /* badge tooltip text */
+    }
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.chat.waitForChat(user: string, text: string | function, options: object)"
+                    desc="Wait for specific chat message with advanced pattern matching."
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "user", type: "String", desc: 'Username to match, or "*" for any user' },
+                        { name: "text", type: "String | Function", desc: 'Exact text to match, "*" for any text, or function for custom matching' },
+                        { name: "options.onMatch", type: "Function", desc: "Required. Callback when message matches" },
+                        { name: "options.recallable", type: "Boolean", desc: "Allow multiple matches (default: false)" },
+                        { name: "options.timeout", type: "Number", desc: "Timeout in seconds (default: 15, use Infinity for no timeout)" },
+                        { name: "options.onFallback", type: "Function", desc: "Callback when timeout occurs without match" },
+                      ]}
+                    />
+                    <CodeBlock>{`// Wait for specific message (one-time)
+await Dreddark.chat.waitForChat("PlayerName", "ready", {
+    onMatch(data) {
+        console.log("Player is ready!", data);
+    },
+    onFallback() {
+        console.log("Timeout - player didn't respond");
+    },
+    timeout: 30
+});
+
+// Listen for pattern (recallable)
+const cleanup = Dreddark.chat.waitForChat("*", function(msg) {
+    return msg.includes("help");
+}, {
+    onMatch(data) {
+        Dreddark.chat.send("Help is available!");
+    },
+    recallable: true,
+    timeout: Infinity
+});
+
+// Stop listening
+cleanup();`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc name="Dreddark.chat.init()" desc="Initialize chat observer. Called automatically on load." />
+                  <FunctionDoc name="Dreddark.chat.destroy()" desc="Stop chat observer." />
+                  <FunctionDoc name="Dreddark.chat.openChat()" desc="Open the chat box if it is currently closed." />
+                  <FunctionDoc name="Dreddark.chat.closeChat()" desc="Close the chat box if it is currently open." />
+                  <InfoBox><strong>isOwn:</strong> The <code>chat</code>, <code>shipJoin</code>, and <code>shipLeave</code> events include <code>isOwn: boolean</code> — <code>true</code> when the message or action belongs to the local client. The <code>roleChange</code> event includes both <code>isOwn</code> (you were the target) and <code>isOwnAction</code> (you performed the action).</InfoBox>
+                </section>
+
+                {}
+                <section id="ship" className="section">
+                  <h2><Icon name="directions_boat" />Ship Management</h2>
+                  <p>Functions for managing ship crew and operations.</p>
+                  <FunctionDoc
+                    name="Dreddark.ship.promote(user: string, targetRank: string | number)"
+                    desc="Promote a user to a higher rank."
+                    async
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "user", type: "String", desc: "Username to promote" },
+                        { name: "targetRank", type: "String | Number", desc: '"guest" (0), "crew" (1), or "captain" (3)' },
+                      ]}
+                    />
+                    <CodeBlock>{`await Dreddark.ship.promote("PlayerName", "crew");
+await Dreddark.ship.promote("PlayerName", 1); // Same as "crew"`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.ship.demote(user: string, targetRank: string | number)"
+                    desc="Demote a user to a lower rank."
+                    async
+                    code={`await Dreddark.ship.demote("PlayerName", "guest");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.isClientCap()"
+                    desc="Check if the current user is ship captain."
+                    code={`if (Dreddark.ship.isClientCap()) {
+    console.log("You are the captain!");
+}`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.getAllShipPlayer()"
+                    desc="Get array of all players currently on the ship."
+                    async
+                    code={`const players = await Dreddark.ship.getAllShipPlayer();
+console.log("Ship crew:", players);`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.getUserContext(user: string)"
+                    desc="Get user context from team manager (requires captain)."
+                    async
+                    code={`const ctx = await Dreddark.ship.getUserContext("PlayerName");
+// Returns: { select, currentRank, ... } or null`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.ensureCrewControl()"
+                    desc="Ensure the Team Manager is opened and the 'Crew Control & Log' tab is active."
+                    async
+                  >
+                    <p>This utility guarantees that the script is operating inside the correct Team Manager panel before performing crew-related actions. It automatically opens the team manager if closed and switches to the <b>Crew Control & Log</b> tab if necessary.</p>
+                    <CodeBlock>{`const ok = await Dreddark.ship.ensureCrewControl();
+if (ok) {
+  console.log("Crew control ready.");
+}`}</CodeBlock>
+                    <p>Returns <code>true</code> if the panel is ready, otherwise <code>false</code>.</p>
+                  </FunctionDoc>
+                  <h3>Gravity Snake Controls</h3>
+                  <p>Hidden gravity controls triggered through the crew control search panel.</p>
+                  <FunctionDoc
+                    name="Dreddark.ship.coolsnake303(direction: number)"
+                    desc="Trigger the hidden gravity control buttons for coolsnake303."
+                    async
+                  >
+                    <ParamTable params={[{ name: "direction", type: "Number", desc: "Direction to trigger (1=left, 2=up, 3=down, 4=right)." }]} />
+                    <CodeBlock>{`// Move left
+await Dreddark.ship.coolsnake303(1);
+// Move up
+await Dreddark.ship.coolsnake303(2);
+// Move down
+await Dreddark.ship.coolsnake303(3);
+// Move right
+await Dreddark.ship.coolsnake303(4);`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.ship.coolsnake.start(queue: number[], delay?: number)"
+                    desc="Start automated gravity movement using a repeating queue pattern."
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "queue", type: "Number[]", desc: "Array of directions to repeat." },
+                        { name: "delay", type: "Number", desc: "Delay between moves in milliseconds. Default is 400." },
+                      ]}
+                    />
+                    <CodeBlock>{`// Example queue
+// 4 → right
+// 2 → up
+// 3 → down
+// 1 → left
+Dreddark.ship.coolsnake.start([4,2,3,1], 300);
+// Vertical oscillation
+Dreddark.ship.coolsnake.start([2,3], 250);
+// Horizontal oscillation
+Dreddark.ship.coolsnake.start([1,4], 250);`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.ship.coolsnake.stop()"
+                    desc="Stop the current coolsnake automation loop."
+                    code={`Dreddark.ship.coolsnake.stop();`}
+                  />
+                  <h3>Direction Reference</h3>
+                  <CodeBlock>{`{
+  1: "left",
+  2: "up",
+  3: "down",
+  4: "right"
+}`}</CodeBlock>
+                  <FunctionDoc
+                    name="Dreddark.ship.join(shipId: string)"
+                    desc="Join a ship using DOM by ship id."
+                    async
+                    code={`await Dreddark.ship.join(/* ship code */);`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.joinWithInvite(invite: string)"
+                    desc="Join a ship by invite code."
+                    async
+                    code={`await Dreddark.ship.joinWithInvite(/* ship code */);`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.motdEdit(text: string)"
+                    desc="Edit ship's Message of the Day."
+                    async
+                    code={`await Dreddark.ship.motdEdit("Welcome to our ship!");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.getCurrentJoinedShip()"
+                    desc="Get data about the ship the client is currently on (saved by initSaveJoinedShip). Returns null if not tracked."
+                    code={`const ship = Dreddark.ship.getCurrentJoinedShip();
+if (ship) {
+    console.log("Ship:", ship.title, "Crew:", ship.crew);
+}
+/* Returns: { id, title, crew, backgroundColor, backgroundImage, joinedAt, node } */`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.initSaveJoinedShip()"
+                    desc="Start tracking the current ship by observing shipyard clicks. Returns false if the shipyard element is not found."
+                    code={`Dreddark.ship.initSaveJoinedShip();`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.clearCurrentShip()"
+                    desc="Clear the saved current ship data from session storage."
+                    code={`Dreddark.ship.clearCurrentShip();`}
+                  />
+                  <h3>Ship Logs System</h3>
+                  <p>Advanced ship log parsing and event system.</p>
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.on(eventOrCallback: string | function, handler?: function)"
+                    desc="Listen to ship log events with flexible patterns."
+                    code={`// Listen to all logs
+Dreddark.ship.logs.on(function(entry) {
+    console.log("Log:", entry.action, entry.target);
+});
+// Pattern matching
+Dreddark.ship.logs.on("used weapon", function(entry) {
+    console.log("Weapon used!");
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.onVerb(verb: string, handler: function)"
+                    desc="Listen to logs with specific action verb."
+                    code={`Dreddark.ship.logs.onVerb("placed", function(entry) {
+    console.log("Placed:", entry.target);
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.onMethod(method: string, handler: function)"
+                    desc="Listen to logs with a specific method value."
+                    code={`Dreddark.ship.logs.onMethod("cannon", function(entry) {
+    console.log("Cannon used on:", entry.target);
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.onMatch(ruleName: string, handler: function)"
+                    desc="Listen to logs that matched a specific named rule."
+                    code={`Dreddark.ship.logs.onMatch("renamed_ship", function(entry) {
+    console.log("Ship renamed to:", entry.target);
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.onPattern(pattern: string, handler: function)"
+                    desc="Listen to logs matching a space-separated keyword pattern (all tokens must appear)."
+                    code={`Dreddark.ship.logs.onPattern("used weapon", function(entry) {
+    console.log("Weapon used:", entry);
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.onAction(handler: function)"
+                    desc="Listen to all log actions in a simplified normalized format."
+                    code={`Dreddark.ship.logs.onAction(function(e) {
+    // e: { action, method, target, user, timestamp, raw }
+    console.log(e.user, "→", e.action, e.target);
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.addRule(rule: object)"
+                    desc="Add custom parsing rule for log entries."
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "name", type: "String", desc: "Unique rule name" },
+                        { name: "regex", type: "RegExp", desc: "Pattern to match log text" },
+                        { name: "mapper", type: "Function", desc: "Extract data from regex match" },
+                      ]}
+                    />
+                    <CodeBlock>{`Dreddark.ship.logs.addRule({
+    name: "custom_action",
+    regex: /^fired (.+) at (.+)$/i,
+    mapper(match) {
+        return {
+            action: "fired",
+            method: match[1],
+            target: match[2]
+        };
+    }
+});`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.removeRule(name: string)"
+                    desc="Remove a named parsing rule. Returns true if a rule was removed."
+                    code={`Dreddark.ship.logs.removeRule("custom_action");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.listRules()"
+                    desc="Get a copy of all current parsing rules (alias: getRules)."
+                    code={`const rules = Dreddark.ship.logs.listRules();
+console.log(rules.map(r => r.name));`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.getLogs()"
+                    desc="Get a copy of all captured log entries."
+                    code={`const logs = Dreddark.ship.logs.getLogs();
+console.log(logs.length, "entries");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.clearLogs()"
+                    desc="Clear all captured log entries and their dedup hashes."
+                    code={`Dreddark.ship.logs.clearLogs();`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.ship.logs.forceProcess()"
+                    desc="Re-process all existing log entries in the current #team_log_actual container."
+                    code={`Dreddark.ship.logs.forceProcess();`}
+                  />
+                  <FunctionDoc name="Dreddark.ship.logs.init()" desc="Start observing the ship log container." />
+                  <FunctionDoc name="Dreddark.ship.logs.destroy()" desc="Disconnect the ship log MutationObserver." />
+                  <h3>Rank Values</h3>
+                  <CodeBlock>{`{
+    0: "guest",
+    1: "crew",
+    3: "captain",
+    guest: 0,
+    crew: 1,
+    captain: 3
+}`}</CodeBlock>
+                </section>
+
+                {}
+                <section id="client" className="section">
+                  <h2><Icon name="person" />Client Information</h2>
+                  <p>Get information about the current player account.</p>
+                  <FunctionDoc
+                    name="Dreddark.client.accountInfo()"
+                    desc="Fetch account information from server."
+                    async
+                    code={`const info = await Dreddark.client.accountInfo();
+// Returns: { name: string | null, isRegistered: boolean }
+console.log("Account:", info.name);
+console.log("Registered:", info.isRegistered);`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.client.getClientUsername()"
+                    desc="Get current player's username."
+                    async
+                    code={`const username = await Dreddark.client.getClientUsername();
+console.log("You are:", username);`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.client.isClientRegistered()"
+                    desc="Check if current account is registered."
+                    async
+                    code={`const registered = await Dreddark.client.isClientRegistered();
+if (!registered) {
+    console.log("Please register your account");
+}`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.client.stat(key?: string | string[])"
+                    desc="Get a cached snapshot of client state. Pass a key for a single value, an array for multiple, or nothing for the full snapshot."
+                    code={`// Full snapshot
+const s = Dreddark.client.stat();
+// { name, role, rank, isRegistered, isCaptain }
+
+// Single key
+const name = Dreddark.client.stat("name");
+
+// Multiple keys
+const { name, isCaptain } = Dreddark.client.stat(["name", "isCaptain"]);`}
+                  />
+                </section>
+
+                {}
+                <section id="commands" className="section">
+                  <h2><Icon name="terminal" />Commands System</h2>
+                  <p>Register custom chat commands with arguments, rank requirements, and cooldowns.</p>
+                  <WarningBox><strong>init() required:</strong> Commands will not process any chat messages until <code>Dreddark.commands.init()</code> is called.</WarningBox>
+                  <FunctionDoc
+                    name="Dreddark.commands.init()"
+                    desc="Start the command listener. Must be called before any commands will work. Returns false if already started."
+                    code={`Dreddark.commands.init();`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.commands.destroy()"
+                    desc="Stop the command listener and detach the chat event handler. Returns false if not running."
+                    code={`Dreddark.commands.destroy();`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.commands.register(name: string, handler: object)"
+                    desc="Register a new command."
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "prefix", type: "String", desc: 'Command prefix (default: "?")', isHandler: true },
+                        { name: "rankRequire", type: "Number", desc: "Minimum rank required (0=guest, 1=crew, 3=captain)", isHandler: true },
+                        { name: "sessionCooldown", type: "Number", desc: "Per-user cooldown in ms (resets on page reload)", isHandler: true },
+                        { name: "persistCooldown", type: "Number", desc: "Per-user cooldown in ms (persists across reloads)", isHandler: true },
+                        { name: "globalCooldown", type: "Number", desc: "Global cooldown in ms for all users", isHandler: true },
+                        { name: "args", type: "Array", desc: "Argument definitions", isHandler: true },
+                        { name: "run", type: "Function", desc: "Command handler function(event, args, user)", isHandler: true },
+                      ]}
+                    />
+                    <CodeBlock>{`// Simple command
+Dreddark.commands.register("hello", {
+    run(event, args, user) {
+        Dreddark.chat.send("Hello " + event.user + "!");
+    }
+});
+// Advanced command with validation
+Dreddark.commands.register("give", {
+    prefix: "!",
+    rankRequire: 1,
+    sessionCooldown: 5000,
+    args: [
+        {
+            name: "item",
+            required: true,
+            validate(value) {
+                const validItems = ["sword", "shield"];
+                if (!validItems.includes(value)) {
+                    return "Invalid item. Use: sword or shield";
+                }
+                return null;
+            }
+        }
+    ],
+    run(event, args, user) {
+        const [item] = args;
+        Dreddark.chat.send(\`Giving \${item}\`);
+    }
+});`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.commands.setDefaultPrefix(prefix: string)"
+                    desc="Set default command prefix for all commands."
+                    code={`Dreddark.commands.setDefaultPrefix("!");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.commands.getDefaultPrefix()"
+                    desc="Get current default command prefix."
+                    code={`const prefix = Dreddark.commands.getDefaultPrefix();
+console.log("Prefix:", prefix); // Default: "?"`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.commands.registerCommandAutoComplete(label: string, opts?: object)"
+                    desc="Register an autocomplete entry that appears in the chat input suggestion list."
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "label", type: "String", desc: "Display text shown in the autocomplete list (required)", isOption: true },
+                        { name: "trigger", type: "String", desc: "Only show this entry when the input starts with this string", isOption: true },
+                        { name: "cmd", type: "String | Function", desc: "The value inserted into the input, or a function(val) returning a string", isOption: true },
+                        { name: "description", type: "String", desc: "Short hint shown next to the label (truncated, full text on hover)", isOption: true },
+                        { name: "priority", type: "Number", desc: "Higher priority entries appear first (default: 0)", isOption: true },
+                        { name: "visible", type: "Function", desc: "function(val) → boolean. Hide entry based on current input", isOption: true },
+                        { name: "runOnClick", type: "Boolean", desc: "If true, clicking sends the command immediately instead of filling the input", isOption: true },
+                        { name: "onExecute", type: "Function", desc: "Custom handler when runOnClick is true: function(resolvedCmd, val)", isOption: true },
+                        { name: "once", type: "Boolean", desc: "Remove the entry after it is clicked once", isOption: true },
+                      ]}
+                    />
+                    <CodeBlock>{`// Fill input on click
+Dreddark.commands.registerCommandAutoComplete("?help", {
+    trigger: "?",
+    cmd: "?help",
+    description: "Show help",
+    priority: 10,
+});
+
+// Send immediately on click
+Dreddark.commands.registerCommandAutoComplete("Quick greet", {
+    trigger: "?",
+    cmd: "?greet",
+    runOnClick: true,
+    description: "Send greeting",
+});
+
+// Dynamic cmd from current input
+Dreddark.commands.registerCommandAutoComplete("Echo input", {
+    cmd: (val) => \`?echo \${val}\`,
+});`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.commands.unregisterCommandAutoComplete(label: string)"
+                    desc="Remove an autocomplete entry by its label. Returns true if it existed."
+                    code={`Dreddark.commands.unregisterCommandAutoComplete("?help");`}
+                  />
+                </section>
+
+                {}
+                <section id="mission" className="section">
+                  <h2><Icon name="assignment" />Mission System</h2>
+                  <p>Track mission timings and get information about current and future missions.</p>
+                  <FunctionDoc
+                    name="Dreddark.mission.getMissionState()"
+                    desc="Get current mission state (open/closed with timing)."
+                    code={`const state = Dreddark.mission.getMissionState();
+console.log(state);
+/* Returns:
+{
+    source: "timer" or "chat",
+    isOpen: boolean,
+    openAt: timestamp,
+    closeAt: timestamp,
+    name: string | null,
+    location: string | null
+}
+*/
+if (state.isOpen) {
+    const mins = Math.floor((state.closeAt - Date.now()/1000)/60);
+    console.log(\`Mission closes in \${mins} minutes\`);
+}`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.mission.getFutureMissions(count: number)"
+                    desc="Get list of upcoming mission windows."
+                    code={`const upcoming = Dreddark.mission.getFutureMissions(5);
+upcoming.forEach((mission, i) => {
+    const date = new Date(mission.openAt * 1000);
+    console.log(\`Mission \${i + 1}: \${date.toLocaleString()}\`);
+});`}
+                  />
+                  <InfoBox><strong>Mission Timing:</strong> Missions open for 15 minutes every 45 minutes (15 min open, 30 min closed cycle).</InfoBox>
+                  <InfoBox><strong>time field:</strong> The <code>mission</code> chat event includes a <code>time</code> field — a number (minutes until open/close) parsed from the system message, or <code>null</code> if not mentioned.</InfoBox>
+                </section>
+
+                {}
+                <section id="pvp" className="section">
+                  <h2><Icon name="sports_mma" />PvP Events</h2>
+                  <p>Query PvP event schedule.</p>
+                  <FunctionDoc
+                    name="Dreddark.pvpEvent.fetchSchedule()"
+                    desc="Fetch the latest PvP event schedule from server."
+                    async
+                    code={`await Dreddark.pvpEvent.fetchSchedule();`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.pvpEvent.pvpEvent(eventQuery: string)"
+                    desc="Query PvP events by query or date. Use pvpEventQuery helpers to build the query."
+                    async
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "eventQuery", type: "String", desc: "A query string — use pvpEventQuery helpers or pass a date string directly." },
+                      ]}
+                    />
+                    <CodeBlock>{`const { pvpEvent, pvpEventQuery } = Dreddark.pvpEvent;
+ 
+// Using pvpEventQuery helpers
+const all         = await pvpEvent(pvpEventQuery.all());
+const today       = await pvpEvent(pvpEventQuery.today());
+const next        = await pvpEvent(pvpEventQuery.next());
+const second      = await pvpEvent(pvpEventQuery.second());
+const third       = await pvpEvent(pvpEventQuery.third());
+const fourth      = await pvpEvent(pvpEventQuery.fourth());
+ 
+// Query by weekday
+const fridays     = await pvpEvent(pvpEventQuery.friday());
+const mondays     = await pvpEvent(pvpEventQuery.monday());
+ 
+// Query by any Date or timestamp
+const byDate      = await pvpEvent(pvpEventQuery.day(new Date()));
+const byTimestamp = await pvpEvent(pvpEventQuery.day(Date.now()));
+ 
+// Query by raw date string
+const byRaw       = await pvpEvent("2026-03-21");`}</CodeBlock>
+                  </FunctionDoc>
+                  <FunctionDoc
+                    name="Dreddark.pvpEvent.pvpEventQuery"
+                    desc="Object containing all available query helpers for pvpEvent()."
+                  >
+                    <table>
+                      <thead><tr><th>Helper</th><th>Returns</th><th>Description</th></tr></thead>
+                      <tbody>
+                        <tr><td><code>pvpEventQuery.all()</code></td><td><code>"all"</code></td><td>All scheduled events</td></tr>
+                        <tr><td><code>pvpEventQuery.today()</code></td><td><code>"today"</code></td><td>Events happening today</td></tr>
+                        <tr><td><code>pvpEventQuery.next()</code></td><td><code>"next"</code></td><td>Next upcoming event</td></tr>
+                        <tr><td><code>pvpEventQuery.second()</code></td><td><code>"second"</code></td><td>Second upcoming event</td></tr>
+                        <tr><td><code>pvpEventQuery.third()</code></td><td><code>"third"</code></td><td>Third upcoming event</td></tr>
+                        <tr><td><code>pvpEventQuery.fourth()</code></td><td><code>"four"</code></td><td>Fourth upcoming event</td></tr>
+                        <tr><td><code>pvpEventQuery.sunday()</code></td><td><code>"sunday"</code></td><td>All events on Sundays</td></tr>
+                        <tr><td><code>pvpEventQuery.monday()</code></td><td><code>"monday"</code></td><td>All events on Mondays</td></tr>
+                        <tr><td><code>pvpEventQuery.tuesday()</code></td><td><code>"tuesday"</code></td><td>All events on Tuesdays</td></tr>
+                        <tr><td><code>pvpEventQuery.wednesday()</code></td><td><code>"wednesday"</code></td><td>All events on Wednesdays</td></tr>
+                        <tr><td><code>pvpEventQuery.thursday()</code></td><td><code>"thursday"</code></td><td>All events on Thursdays</td></tr>
+                        <tr><td><code>pvpEventQuery.friday()</code></td><td><code>"friday"</code></td><td>All events on Fridays</td></tr>
+                        <tr><td><code>pvpEventQuery.saturday()</code></td><td><code>"saturday"</code></td><td>All events on Saturdays</td></tr>
+                        <tr><td><code>pvpEventQuery.day(date)</code></td><td>Weekday string</td><td>Converts a <code>Date</code> object or <code>Date.now()</code> timestamp to a weekday query</td></tr>
+                      </tbody>
+                    </table>
+                  </FunctionDoc>
+                </section>
+
+                {}
+                <section id="storage" className="section">
+                  <h2><Icon name="storage" />Storage System</h2>
+                  <p>Flexible storage abstraction supporting multiple backends.</p>
+                  <FunctionDoc
+                    name="Dreddark.storage.defaultStorage.get(path: string)"
+                    desc="Get value from storage using dot-notation path."
+                    code={`const value = Dreddark.storage.defaultStorage.get("user.settings.theme");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.storage.defaultStorage.set(path: string, value: any)"
+                    desc="Set value in storage using dot-notation path."
+                    code={`Dreddark.storage.defaultStorage.set("user.settings.theme", "dark");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.storage.defaultStorage.del(path: string)"
+                    desc="Delete value from storage."
+                    code={`Dreddark.storage.defaultStorage.del("user.settings.theme");`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.storage.createStorage(options: object)"
+                    desc="Create custom storage instance with specific backend."
+                    code={`// Create memory-based storage
+const memStorage = Dreddark.storage.createStorage({
+    defaultDatabase: "memory",
+    namespace: "MyApp"
+});`}
+                  />
+                  <h3>Available Storage Backends</h3>
+                  <table>
+                    <thead><tr><th>Backend</th><th>Description</th><th>Persistence</th></tr></thead>
+                    <tbody>
+                      <tr><td><code>localstorage</code></td><td>Browser localStorage (default)</td><td>Permanent</td></tr>
+                      <tr><td><code>sessionstorage</code></td><td>Browser sessionStorage</td><td>Session only</td></tr>
+                      <tr><td><code>memory</code></td><td>In-memory storage</td><td>Page reload</td></tr>
+                      <tr><td><code>indexeddb</code></td><td>IndexedDB (async)</td><td>Permanent</td></tr>
+                      <tr><td><code>cookie</code></td><td>Browser cookies</td><td>Configurable (default 1 year)</td></tr>
+                      <tr><td><code>url</code></td><td>URL query string / hash / path</td><td>While URL is shared</td></tr>
+                      <tr><td><code>broadcast</code></td><td>BroadcastChannel (cross-tab memory)</td><td>While tabs are open</td></tr>
+                    </tbody>
+                  </table>
+                </section>
+
+                {}
+                <section id="utils" className="section">
+                  <h2><Icon name="build" />Utilities</h2>
+                  <p>Helper functions for common tasks.</p>
+                  <FunctionDoc
+                    name="Dreddark.utils.validateName(name: string)"
+                    desc="Validate a username according to game rules."
+                    code={`const error = Dreddark.utils.validateName(/* username */);
+if (error) {
+    console.log("Invalid name:", error);
+    // Possible errors:
+    // "NAME_TOO_LONG", "NAME_TOO_SHORT",
+    // "STARTS_WITH_SPACE", "ENDS_WITH_SPACE",
+    // "DOUBLE_SPACE", "INVALID_CHARACTER"
+} else {
+    console.log("Name is valid!");
+}`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.utils.state(initialData: object)"
+                    desc="Create reactive state object with watchers."
+                    code={`const gameState = Dreddark.utils.state({ score: 0, level: 1 });
+// Watch for changes
+gameState.watch("score", function(newValue, oldValue) {
+    console.log(\`Score: \${oldValue} → \${newValue}\`);
+});
+// Get/Set values
+const score = gameState.get("score");
+gameState.set("score", 100);
+// Get snapshot
+const snapshot = gameState.snapshot();`}
+                  />
+                </section>
+
+                {}
+                <section id="dom" className="section">
+                  <h2><Icon name="code" />DOM Utilities</h2>
+                  <p>DOM manipulation and waiting helpers.</p>
+                  <FunctionDoc
+                    name="Dreddark.dom.wait(selector: string, options?: object)"
+                    desc="Wait for an element to appear in the DOM."
+                    async
+                    code={`// Wait for element (default 10s timeout)
+const element = await Dreddark.dom.wait("#my-element");
+// Custom timeout
+const element = await Dreddark.dom.wait(".my-class", {
+    timeout: 5000
+});`}
+                  />
+                  <FunctionDoc
+                    name="Dreddark.dom.findTextNodes(root: Element, query: string, options?: object)"
+                    desc="Find text nodes containing specific text (async batched search)."
+                    async
+                  >
+                    <ParamTable
+                      params={[
+                        { name: "caseSensitive", type: "Boolean", desc: "Case-sensitive search (default: false)", isOption: true },
+                        { name: "limit", type: "Number", desc: "Max results (default: Infinity)", isOption: true },
+                        { name: "batchSize", type: "Number", desc: "Nodes per frame (default: 250)", isOption: true },
+                      ]}
+                    />
+                    <CodeBlock>{`const nodes = await Dreddark.dom.findTextNodes(
+    document.body,
+    "hello",
+    { caseSensitive: false, limit: 10 }
+);`}</CodeBlock>
+                  </FunctionDoc>
+                </section>
+
+                {}
+                <section id="outfit" className="section">
+                  <h2><Icon name="checkroom" />Outfit API <Badge type="deprecated">DEPRECATED</Badge></h2>
+                  <WarningBox><strong>Warning:</strong> The Outfit API no longer works and should not be used.</WarningBox>
+                  <FunctionDoc
+                    name="Dreddark.outfit.initWsHook(messageKey: string)"
+                    desc="Initialize WebSocket hook (no longer functional)."
+                    deprecated
+                  />
+                  <FunctionDoc
+                    name="Dreddark.outfit.setOutfit(isInGame: boolean, outfit: object)"
+                    desc="Set player outfit (no longer functional)."
+                    deprecated
+                  />
+                </section>
+              </div>
+
+              <footer>
+                <p><strong>Simple Dreddark API v2.2.1</strong><br />Created by Pshsayhi | <a href="https://github.com/PshsayhiXD/Simple-Dreddark-API" target="_blank">GitHub Repository</a> | <a href="https://drednot.io" target="_blank">drednot.io</a></p>
+                <p style={{ marginTop: "16px", color: "#9aa0a6" }}>This documentation is auto-generated. For the latest updates, check the GitHub repository.</p>
+              </footer>
+            </main>
+          </div>
+        );
+      };
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+    </script>
+  </body>
+</html>

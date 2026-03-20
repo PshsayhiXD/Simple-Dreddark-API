@@ -1,0 +1,401 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Changelog - Dreddark API v2</title>
+  <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&family=Roboto+Mono&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      font-family: "Roboto", sans-serif;
+      line-height: 1.6;
+      color: #24292e;
+      background: #f6f8fa;
+      transition: background-color 0.3s, color 0.3s;
+    }
+    body.dark {
+      background: #0d1117;
+      color: #c9d1d9;
+    }
+
+    .app-layout { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 280px;
+      background: white;
+      border-right: 1px solid #e0e0e0;
+      position: fixed;
+      left: 0; top: 0; bottom: 0;
+      overflow-y: auto;
+      z-index: 100;
+      box-shadow: 2px 0 8px rgba(0,0,0,0.05);
+    }
+    body.dark .sidebar { background: #161b22; border-right-color: #30363d; }
+
+    .sidebar-header {
+      padding: 24px 20px;
+      background: linear-gradient(135deg, #1a73e8 0%, #1557b0 100%);
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .sidebar-header h1 { font-size: 1.25rem; font-weight: 500; margin-bottom: 4px; }
+    .sidebar-version {
+      display: inline-block;
+      background: rgba(255,255,255,0.25);
+      padding: 2px 8px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .sidebar-nav { padding: 16px 0; }
+    .nav-section { margin-bottom: 24px; }
+    .nav-section-title {
+      padding: 8px 20px;
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: #5f6368;
+      text-transform: uppercase;
+      letter-spacing: 0.8px;
+    }
+    body.dark .nav-section-title { color: #8b949e; }
+
+    .nav-item {
+      display: flex;
+      align-items: center;
+      padding: 12px 20px;
+      color: #5f6368;
+      text-decoration: none;
+      transition: background 0.2s, color 0.2s, border-left-color 0.2s;
+      cursor: pointer;
+      border-left: 3px solid transparent;
+    }
+    body.dark .nav-item { color: #8b949e; }
+    .nav-item:hover { background: #f1f3f4; color: #1a73e8; }
+    body.dark .nav-item:hover { background: #1f242b; color: #58a6ff; }
+    .nav-item.active {
+      background: #e8f0fe;
+      color: #1967d2;
+      border-left-color: #1967d2;
+      font-weight: 500;
+    }
+    body.dark .nav-item.active { background: #1f242b; color: #58a6ff; border-left-color: #58a6ff; }
+    .nav-item .material-icons { margin-right: 12px; font-size: 20px; }
+
+    .nav-external {
+      border-top: 1px solid #e0e0e0;
+      margin-top: 8px;
+      padding-top: 8px;
+    }
+    body.dark .nav-external { border-top-color: #30363d; }
+
+    .theme-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 20px;
+      border-top: 1px solid #e0e0e0;
+      margin-top: 8px;
+    }
+    body.dark .theme-toggle { border-top-color: #30363d; }
+    .theme-toggle span { font-size: 0.875rem; color: #5f6368; }
+    body.dark .theme-toggle span { color: #8b949e; }
+    .theme-toggle button {
+      background: none;
+      border: none;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #5f6368;
+      font-size: 0.875rem;
+      font-family: "Roboto", sans-serif;
+    }
+    body.dark .theme-toggle button { color: #8b949e; }
+    .theme-toggle button:hover { color: #1a73e8; }
+    body.dark .theme-toggle button:hover { color: #58a6ff; }
+
+    .main-content { flex: 1; margin-left: 280px; }
+
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 40px 24px;
+    }
+
+    .section {
+      background: white;
+      border-radius: 8px;
+      padding: 32px;
+      margin-bottom: 24px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+      animation: fadeInUp 0.5s ease-out;
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    body.dark .section { background: #161b22; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+    .section:hover { transform: translateY(-2px); box-shadow: 0 8px 16px rgba(0,0,0,0.1); }
+    body.dark .section:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.5); }
+
+    .section h2 {
+      font-size: 1.75rem;
+      font-weight: 400;
+      margin-bottom: 24px;
+      color: #1a73e8;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    body.dark .section h2 { color: #58a6ff; }
+
+    .changelog-entry {
+      border-left: 4px solid #e8f0fe;
+      padding: 24px;
+      margin: 24px 0;
+      background: #f8f9fa;
+      border-radius: 4px;
+      transition: border-left-color 0.2s, background 0.2s;
+    }
+    body.dark .changelog-entry { background: #1f242b; border-left-color: #30363d; }
+    .changelog-entry:hover { border-left-color: #1a73e8; }
+    body.dark .changelog-entry:hover { border-left-color: #58a6ff; }
+
+    .version-header {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+    .version-number {
+      font-family: "Roboto Mono", monospace;
+      font-size: 1.5rem;
+      font-weight: 500;
+      color: #1a73e8;
+    }
+    body.dark .version-number { color: #58a6ff; }
+    .version-date { color: #5f6368; font-size: 0.875rem; }
+    body.dark .version-date { color: #8b949e; }
+
+    .version-badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+    .badge-major { background: #fce8e6; color: #c5221f; }
+    .badge-minor { background: #e8f0fe; color: #1967d2; }
+    .badge-patch { background: #e6f4ea; color: #1e8e3e; }
+
+    .change-category { margin: 20px 0; }
+    .change-category h4 {
+      font-size: 0.875rem;
+      font-weight: 500;
+      color: #5f6368;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 12px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    body.dark .change-category h4 { color: #8b949e; }
+    .change-category h4 .material-icons { font-size: 18px; }
+
+    .cat-added    h4 .material-icons { color: #1e8e3e; }
+    .cat-changed  h4 .material-icons { color: #1967d2; }
+    .cat-fixed    h4 .material-icons { color: #f9ab00; }
+    .cat-removed  h4 .material-icons { color: #c5221f; }
+    .cat-deprecated h4 .material-icons { color: #f9ab00; }
+    .cat-security h4 .material-icons { color: #c5221f; }
+
+    .change-list { list-style: none; padding-left: 0; }
+    .change-list li {
+      padding: 8px 0 8px 32px;
+      position: relative;
+      color: #202124;
+    }
+    body.dark .change-list li { color: #e6edf3; }
+    .change-list li::before {
+      content: "•";
+      position: absolute;
+      left: 12px;
+      color: #1a73e8;
+      font-weight: bold;
+    }
+    body.dark .change-list li::before { color: #58a6ff; }
+
+    code {
+      background: #f1f3f4;
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: "Roboto Mono", monospace;
+      font-size: 0.875rem;
+    }
+    body.dark code { background: #1f242b; color: #e6edf3; }
+
+    .material-icons { vertical-align: middle; font-size: 20px; }
+
+    footer {
+      background: white;
+      border-top: 1px solid #e8eaed;
+      padding: 32px 24px;
+      margin-top: 48px;
+      text-align: center;
+      color: #5f6368;
+    }
+    body.dark footer { background: #161b22; border-top-color: #30363d; color: #8b949e; }
+    footer a { color: #1a73e8; text-decoration: none; }
+    body.dark footer a { color: #58a6ff; }
+    footer a:hover { text-decoration: underline; }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(20px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      .sidebar { transform: translateX(-280px); }
+      .main-content { margin-left: 0; }
+    }
+  </style>
+</head>
+<body>
+
+<div class="app-layout">
+
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <h1>Dreddark API</h1>
+      <span class="sidebar-version">v2.2.1</span>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section">
+        <div class="nav-section-title">Navigation</div>
+        <a href="index.html" class="nav-item"><span class="material-icons">home</span>Documentation</a>
+        <a href="changelog.html" class="nav-item active"><span class="material-icons">history</span>Changelog</a>
+      </div>
+
+      <div class="theme-toggle">
+        <span>Dark Mode</span>
+        <button id="theme-btn" onclick="toggleTheme()">
+          <span class="material-icons" id="theme-icon">dark_mode</span>
+          <span id="theme-label">Dark</span>
+        </button>
+      </div>
+    </nav>
+  </aside>
+
+  <main class="main-content">
+    <div class="container">
+
+      <section class="section">
+        <h2><span class="material-icons">history</span>Changelog</h2>
+        <p>Track all changes, improvements, and fixes to the Dreddark API.</p>
+
+        <!-- v2.2.1 -->
+        <div class="changelog-entry" id="v2.2.1">
+          <div class="version-header">
+            <span class="version-number">2.2.1</span>
+            <span class="version-badge badge-patch">Patch</span>
+            <span class="version-date">March 11, 2026</span>
+          </div>
+          <div class="change-category cat-added">
+            <h4><span class="material-icons">add_circle</span>Added</h4>
+            <ul class="change-list">
+              <li>Added <code>chat.openChat()</code> and <code>chat.closeChat()</code></li>
+              <li>Added <code>isOwn</code> field to <code>chat</code>, <code>shipJoin</code>, and <code>shipLeave</code> events</li>
+              <li>Added <code>isOwn</code> and <code>isOwnAction</code> fields to <code>roleChange</code> event</li>
+              <li>Added <code>time</code> field (minutes, number | null) to <code>mission</code> event</li>
+              <li>Added <code>commands.init()</code> and <code>commands.destroy()</code> - commands now require explicit init</li>
+              <li>Added <code>commands.registerCommandAutoComplete(label, opts)</code></li>
+              <li>Added <code>commands.unregisterCommandAutoComplete(label)</code></li>
+              <li>Added <code>ship.getCurrentJoinedShip()</code>, <code>ship.initSaveJoinedShip()</code>, <code>ship.clearCurrentShip()</code></li>
+              <li>Added full <code>ship.logs</code> API: <code>onMethod</code>, <code>onMatch</code>, <code>onPattern</code>, <code>onAction</code>, <code>removeRule</code>, <code>listRules</code>, <code>getLogs</code>, <code>clearLogs</code>, <code>forceProcess</code>, <code>init</code>, <code>destroy</code></li>
+              <li>Added <code>client.stat(key?)</code> for cached client state snapshots</li>
+              <li>Added <code>cookie</code>, <code>url</code>, and <code>broadcast</code> storage backends</li>
+            </ul>
+          </div>
+          <div class="change-category cat-changed">
+            <h4><span class="material-icons">change_circle</span>Changed</h4>
+            <ul class="change-list">
+              <li>Renamed <code>pvpEvent(type)</code> parameter to <code>pvpEvent(eventQuery)</code> for clarity</li>
+              <li>Added <code>pvpEventQuery</code> helper object - all query values are now functions (e.g. <code>pvpEventQuery.today()</code>, <code>pvpEventQuery.next()</code>)</li>
+              <li>Added <code>pvpEventQuery.day(date)</code> - accepts a <code>Date</code> object or <code>Date.now()</code> timestamp and returns the corresponding weekday query string</li>
+              <li><code>pvpEventQuery</code> is now exposed on the frozen return object alongside <code>fetchSchedule</code> and <code>pvpEvent</code></li>
+              <li>Changed <code>ship.getAllShipPlayer</code> to async</li>
+            </ul>
+          </div>
+          <div class="change-category cat-fixed">
+            <h4><span class="material-icons">build_circle</span>Fixed</h4>
+            <ul class="change-list">
+              <li>Fixed undefined variable <code>client</code> on line 389 - changed to <code>clientName</code></li>
+              <li>Fixed incorrect <code>this</code> context in lines 394 &amp; 414 - changed to <code>ship.isClientCap()</code></li>
+              <li>Fixed <code>ensureCrewControl()</code> return value being accessed as <code>crew.ok</code> - it returns a boolean, not an object</li>
+              <li>Fixed <code>storage.persist</code> on lines 1357 &amp; 1364 - changed to <code>storage.defaultStorage</code></li>
+              <li>Fixed missing <code>return</code> statement in <code>pvpEvent()</code> day filter (lines 1662–1666)</li>
+              <li>Fixed userscript metadata version mismatch - updated <code>@version</code> from <code>2.1.9</code> to <code>2.2.0</code></li>
+              <li>Fixed <code>storage.session</code> references on lines 552, 630, 644 &amp; 1350 - changed to <code>storage.defaultStorage</code></li>
+              <li>Fixed <code>storage.defaultStorage.get()</code> being called with two parameters on line 1350 - only accepts one path argument</li>
+              <li>Fixed cleanup function return value confusion on line 938</li>
+            </ul>
+          </div>
+          <div class="change-category cat-removed">
+            <h4><span class="material-icons">remove_circle</span>Removed</h4>
+            <ul class="change-list">
+              <li>Removed <code>rolePermission</code> option from <code>commands.registerCommandAutoComplete()</code></li>
+            </ul>
+          </div>
+        </div>
+
+        <!-- v2.2.0 --->
+        <div class="changelog-entry" id="v2.2.0">
+          <div class="version-header">
+            <span class="version-number">2.2.0</span>
+            <span class="version-badge badge-patch">Patch</span>
+            <span class="version-date">March 8, 2026</span>
+          </div>
+          <div class="change-category cat-added">
+            <h4><span class="material-icons">add_circle</span>Added</h4>
+            <ul class="change-list">
+              <li>Added <code>ship.joinWithInvite(invite: string)</code></li>
+              <li>Added async <code>ship.ensureCrewControl()</code></li>
+              <li>Added async <code>ship.coolsnake303(direction)</code></li>
+              <li>Added <code>ship.coolsnake</code> automation object</li>
+            </ul>
+          </div>
+        </div>
+
+      </section>
+
+    </div>
+
+    <footer>
+      <p>
+        <strong>Simple Dreddark API v2.2.0</strong><br />
+        Created by Pshsayhi |
+        <a href="https://github.com/PshsayhiXD/Simple-Dreddark-API" target="_blank">GitHub Repository</a> |
+        <a href="https://drednot.io" target="_blank">drednot.io</a>
+      </p>
+      <p style="margin-top:16px;color:#9aa0a6;">This documentation is auto-generated. For the latest updates, check the GitHub repository.</p>
+    </footer>
+  </main>
+
+</div>
+
+<script>
+  function toggleTheme() {
+    const dark = document.body.classList.toggle('dark');
+    document.getElementById('theme-icon').textContent = dark ? 'light_mode' : 'dark_mode';
+    document.getElementById('theme-label').textContent = dark ? 'Light' : 'Dark';
+  }
+</script>
+
+</body>
+</html>

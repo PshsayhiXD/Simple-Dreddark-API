@@ -1,0 +1,10 @@
+{
+  "compress": true,
+  "mangle": {
+    "reserved": ["Dreddark", "client", "ship", "pvpEvent", "commands", "chat", "mission", "storage", "utils", "dom"]
+  },
+  "parse": {
+    "toplevel": true
+  },
+  "module": true
+}

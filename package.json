@@ -1,7 +1,7 @@
 {
   "scripts": {
-    "build:stable": "terser main.js --compress --mangle reserved=['Dreddark'] -o stable.min.js",
-    "build:beta": "terser main.js --compress --mangle reserved=['Dreddark'] -o beta.min.js"
+    "build:stable": "terser main.js --config-file terser.config.json -o stable.min.js",
+    "build:beta":   "terser main.js --config-file terser.config.json -o beta.min.js"
   },
   "devDependencies": {
     "terser": "^5.46.0"

@@ -48,3 +48,6 @@ Dreddark.version // "2.2.1"
 
 ## Document
 https://pshsayhixd.github.io/Simple-Dreddark-API/
+
+## DISCONTINUE !
+- This project has been **DISCONTINUED**. instead, use [interstellar](https://github.com/XendyExe/InterstellarV2/tree/master) which is a better version of this, and a bigger community. [interstellar](https://github.com/XendyExe/InterstellarV2/tree/master) is **NOT** one of our product.
